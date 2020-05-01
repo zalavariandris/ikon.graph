@@ -155,7 +155,7 @@ function initViz(){
 	window.camera = camera;
 
 	/* grid */
-	scene.add(new THREE.GridHelper(100, 10));
+	// scene.add(new THREE.GridHelper(100, 10));
 
 	/* LIGHTING */
 	let keyLight = new THREE.PointLight('white', 0.7);
