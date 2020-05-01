@@ -1,0 +1,123 @@
+body, html{
+	margin: 0;
+	padding: 0;
+}
+
+body{
+	font-family: sans-serif;
+}
+
+canvas{
+	position: fixed;
+	left: 0;
+	top: 0;
+	z-index: -1;
+}
+
+.label{
+
+	pointer-events: none;
+
+	display: flex;
+	flex-direction: row;
+	opacity: 0.85;
+}
+
+.label span{
+	font-size: 10px;
+	text-shadow: 1px 1px 1px white;
+	transform: translateX(-50%);
+	margin-bottom: 10px;
+	background: white;
+	padding: 0.25em 0.5em;
+	position: absolute;
+	bottom: 0;
+	/*border-radius: 3px 3px 3px 0px;*/
+	white-space: pre;
+	box-shadow: 1px 1px 3px hsla(0,0%, 0%, 10%);
+}
+
+.triangle-down{
+	position: absolute;
+	display: block;
+	top: 0;
+	left: 0;
+    width: 20%;
+    height: 20px;
+    background: "whtie";   
+}
+
+.label:before {
+	position: absolute;
+	left: -5px;
+	top: -10px;
+    content: '';
+    background: transparent;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid white;
+    z-index: 10;
+
+}
+
+/* AUTOCOMPLETE*/
+
+.autocomplete{
+	position: fixed;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 13px;
+
+	text-align: center;
+	z-index: 1;
+	right: 0px;
+	width: 16em;
+	display: flex;
+	flex-direction: column;
+	background-color: rgba(255,255,255, 0.7);
+}
+.autocomplete input{
+	background: none;
+	font: inherit;
+	text-align: inherit;
+	padding: 0.5em;
+	border: none;
+}
+
+.autocomplete input:focus{
+	outline: none;
+}
+
+.autocomplete-suggestions{
+	text-align: center;
+	position: fixed;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	z-index: 1;
+	background: rgba(255,255,255, 0.7);
+}
+.autocomplete-suggestions .autocomplete-suggestion{
+	font-size: 80%;
+	margin: 0;
+	padding: 0.5em;
+	cursor: pointer;
+}
+
+.autocomplete-suggestions .autocomplete-suggestion.selected{
+	background: lightblue;
+}
+
+
+#graphInfo{
+	font-size: 10px;
+	position: fixed;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1;
+	background: rgba(255,255,255,0.8);
+	/*background: white;*/
+	padding: 0.25em 1em;
+	opacity: 0.55;
+}
