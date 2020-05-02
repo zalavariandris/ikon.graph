@@ -5,7 +5,6 @@ visualizing hungarian artists network
 ## Deploy to gh-pages
 https://medium.com/@Roli_Dori/deploy-vue-cli-3-project-to-github-pages-ebeda0705fbd
 - add remote from github
-- create gh-pages branch
 ```
 npm run build
 git add -f dist

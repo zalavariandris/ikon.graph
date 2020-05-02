@@ -11,7 +11,7 @@ module.exports = {
     port: 8080,
     disableHostCheck: true
   },
-  plugins: [new HtmlWebpackPlugin()],
+  plugins: [new HtmlWebpackPlugin({title: 'IKON.graph',})],
   module: {
   	rules: [
       {
