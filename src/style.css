@@ -14,8 +14,15 @@ canvas{
 	z-index: -1;
 }
 
-.label{
+#graphCanvas{
+	position: fixed;
+	left: 0;
+	right: 0;
+	width: 100vw;
+	height: 100vh;
+}
 
+.label{
 	pointer-events: none;
 
 	display: flex;
@@ -112,7 +119,7 @@ canvas{
 #graphInfo{
 	font-size: 10px;
 	position: fixed;
-	bottom: 0;
+	bottom: 0px;
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 1;

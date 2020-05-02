@@ -11,7 +11,10 @@ class HTMLLabels{
 		this.domElement.style.position = 'fixed';
 		this.domElement.style.left = "0px";
 		this.domElement.style.top = "0px";
+		this.domElement.style.width = "100vw";
+		this.domElement.style.height = "100vh";
 		this.domElement.style.zIndex = 1;
+		this.domElement.style.pointerEvents = 'none';
 
 		this.elements = new Map(this.keys.map(key=>[key, this.renderItem(key)]))
 	}
@@ -94,8 +97,8 @@ class HTMLLabels{
 		arr.filter( ([key, elem, screenPos])=>elem.style.visibility == 'visible' )
 		arr = arr.sort( (a, b)=>(b[2].z-a[2].z))
 		arr.forEach( ([key, elem, screenPos], i )=>{
-			elem.style.left = (+screenPos.x+1)/2*window.innerWidth  + 'px';
-			elem.style.top  = (-screenPos.y+1)/2*window.innerHeight + 'px';
+			elem.style.left = (+screenPos.x+1)/2*this.domElement.clientWidth  + 'px';
+			elem.style.top  = (-screenPos.y+1)/2*this.domElement.clientHeight + 'px';
 			elem.style.zIndex = i;
 			// elem.children[0].innerText = key+'\n'+elem.style.left+'\n#'+i;
 		});

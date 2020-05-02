@@ -17,7 +17,7 @@ class LatticeControls extends THREE.Object3D{
 			if(this.enabled===false) return;
 
 			// find closest intersection with points
-			const mouse = {x: ( event.clientX / window.innerWidth  ) * 2 - 1, y: -( event.clientY / window.innerHeight ) * 2 + 1};
+			const mouse = {x: ( event.clientX / this.domElement.clientWidth  ) * 2 - 1, y: -( event.clientY / this.domElement.clientHeight ) * 2 + 1};
 			this.raycaster.setFromCamera(mouse, this.camera);
 			const intersects = this.raycaster.intersectObject(this.latticemesh, false);
 			let closestIdx = intersects.sort(i=>i.distance).map(i=>i.index)[0];
@@ -49,7 +49,7 @@ class LatticeControls extends THREE.Object3D{
 		}
 		
 		let onMouseClick = (event)=>{
-			const mouse = {x: ( event.clientX / window.innerWidth  ) * 2 - 1, y: -( event.clientY / window.innerHeight ) * 2 + 1};
+			const mouse = {x: ( event.clientX / this.domElement.clientWidth  ) * 2 - 1, y: -( event.clientY / this.domElement.clientHeight ) * 2 + 1};
 			this.raycaster.setFromCamera(mouse, this.camera);
 			const intersects = this.raycaster.intersectObject(this.latticemesh, false);
 			let closestIdx = intersects.sort(i=>i.distance).map(i=>i.index)[0];
@@ -87,7 +87,7 @@ class LatticeControls extends THREE.Object3D{
 			this.domElement.removeEventListener('touchstart', onTouchStart);
 			this.domElement.addEventListener('touchmove', onTouchMove);
 			this.domElement.addEventListener('touchend', onTouchTap);
-			const touch = {x: ( event.changedTouches[0].clientX / window.innerWidth  ) * 2 - 1, y: -( event.changedTouches[0].clientY / window.innerHeight ) * 2 + 1};
+			const touch = {x: ( event.changedTouches[0].clientX / this.domElement.clientWidth  ) * 2 - 1, y: -( event.changedTouches[0].clientY / this.domElement.clientHeight ) * 2 + 1};
 			// console.log('touchstart', touch);
 		}
 		let onTouchMove = e=>{
@@ -100,8 +100,8 @@ class LatticeControls extends THREE.Object3D{
 
 		let onTouchTap = e=>{
 			const touch = {
-				x: ( e.changedTouches[0].clientX / window.innerWidth  ) * 2 - 1, 
-				y: -( e.changedTouches[0].clientY / window.innerHeight ) * 2 + 1
+				x: ( e.changedTouches[0].clientX / this.domElement.clientWidth  ) * 2 - 1, 
+				y: -( e.changedTouches[0].clientY / this.domElement.clientHeight ) * 2 + 1
 			};
 			this.raycaster.setFromCamera(touch, this.camera);
 			const intersects = this.raycaster.intersectObject(this.latticemesh, false);

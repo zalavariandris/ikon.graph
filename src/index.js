@@ -135,9 +135,12 @@ function createGraph(){
 /***** VIZ *****/
 function initViz(){
 	/* Setup REDNERER */
-	renderer = new THREE.WebGLRenderer({antialias: false, alpha: false });
+	let canvas = document.createElement('canvas');
+	canvas.id='graphCanvas';
+	document.body.appendChild(canvas);
+	renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: false, alpha: false });
 	renderer.setClearColor('hsl(0, 0%, 20%)');
-	renderer.setSize( window.innerWidth, window.innerHeight);
+	renderer.setSize( renderer.domElement.clientWidth, renderer.domElement.clientHeight, false);
 	document.body.appendChild( renderer.domElement );
 	window.renderer = renderer;
 
@@ -145,7 +148,7 @@ function initViz(){
 	scene = new THREE.Scene();
 
 	/* CAMERA */
-	camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 100000 );
+	camera = new THREE.PerspectiveCamera( 50, renderer.domElement.clientWidth/renderer.domElement.clientHeight, 0.01, 100000 );
 	camera.position.x = 10;
 	camera.position.y = 1;
 	camera.position.z = 200;
@@ -376,9 +379,10 @@ function initViz(){
     /* handle window RESIZE */
     window.addEventListener('resize', ()=>{
     	/*camera*/
-		camera.aspect = window.innerWidth/window.innerHeight;
+		camera.aspect = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
 		camera.updateProjectionMatrix();
-		renderer.setSize(window.innerWidth, window.innerHeight);
+
+		renderer.setSize(renderer.domElement.clientWidth, renderer.domElement.clientHeight, false);
 
 		/* screensize graph */
 		let viewport = new THREE.Vector4();
