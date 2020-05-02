@@ -49,6 +49,8 @@ class LatticeControls extends THREE.Object3D{
 		}
 		
 		let onMouseClick = (event)=>{
+			const mouse = {x: ( event.clientX / window.innerWidth  ) * 2 - 1, y: -( event.clientY / window.innerHeight ) * 2 + 1};
+			this.raycaster.setFromCamera(mouse, this.camera);
 			const intersects = this.raycaster.intersectObject(this.latticemesh, false);
 			let closestIdx = intersects.sort(i=>i.distance).map(i=>i.index)[0];
 
@@ -58,25 +60,61 @@ class LatticeControls extends THREE.Object3D{
 			});
 		}
 
-		document.addEventListener('mousemove', onMouseMove);
+		this.domElement.addEventListener('mousemove', onMouseMove);
 
-		document.addEventListener('mousedown', event=>{
+		this.domElement.addEventListener('mousedown', event=>{
 			if(this.enabled===false) return;
-			document.addEventListener('click', onMouseClick);
-			document.removeEventListener('mousemove', onMouseMove);
-			document.addEventListener('mousemove', onMouseDrag);
+			this.domElement.addEventListener('click', onMouseClick);
+			this.domElement.removeEventListener('mousemove', onMouseMove);
+			this.domElement.addEventListener('mousemove', onMouseDrag);
 		});
 
-		document.addEventListener('mouseup', event=>{
-			document.removeEventListener('mousemove', onMouseDrag);
-			setTimeout(()=>document.addEventListener('mousemove', onMouseMove), 10);
+		this.domElement.addEventListener('mouseup', event=>{
+			this.domElement.removeEventListener('mousemove', onMouseDrag);
+			setTimeout(()=>this.domElement.addEventListener('mousemove', onMouseMove), 10);
 			
 		});
 
-		document.addEventListener('mousemove', event=>{
+		this.domElement.addEventListener('mousemove', event=>{
 			if(this.enabled===false) return;
-			document.removeEventListener('click', onMouseClick);
+			this.domElement.removeEventListener('click', onMouseClick);
 		});
+
+		// handle touch as click of not moving
+		let touchIsDragging = false
+
+		let onTouchStart = e=>{
+			this.domElement.removeEventListener('touchstart', onTouchStart);
+			this.domElement.addEventListener('touchmove', onTouchMove);
+			this.domElement.addEventListener('touchend', onTouchTap);
+			const touch = {x: ( event.changedTouches[0].clientX / window.innerWidth  ) * 2 - 1, y: -( event.changedTouches[0].clientY / window.innerHeight ) * 2 + 1};
+			// console.log('touchstart', touch);
+		}
+		let onTouchMove = e=>{
+			this.domElement.removeEventListener('touchmove', onTouchMove);
+			this.domElement.removeEventListener('touchend', onTouchTap);
+			this.domElement.addEventListener('touchstart', onTouchStart);
+			console.log('touchmove');
+			touchIsDragging = true;
+		}
+
+		let onTouchTap = e=>{
+			const touch = {
+				x: ( e.changedTouches[0].clientX / window.innerWidth  ) * 2 - 1, 
+				y: -( e.changedTouches[0].clientY / window.innerHeight ) * 2 + 1
+			};
+			this.raycaster.setFromCamera(touch, this.camera);
+			const intersects = this.raycaster.intersectObject(this.latticemesh, false);
+			let closestIdx = intersects.sort(i=>i.distance).map(i=>i.index)[0];
+
+
+			this.dispatchEvent({
+				type: 'click',
+				index: closestIdx
+			});
+		}
+		
+		this.domElement.addEventListener("touchstart", onTouchStart, false);
 	}
 
 	attach(latticemesh){
