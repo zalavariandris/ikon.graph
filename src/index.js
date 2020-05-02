@@ -9,8 +9,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 window.THREE = THREE;
 
 // GRAPH DATA
-import artist_graph_3D from './milan-artists-graph_3D.json'
-import artist_graph_2D from './milan-artists-graph_2D.json'
+import milangraph from './artists_w3_v2.json'
 
 // GRAHPOLOGY
 import {Graph} from 'graphology'
@@ -93,14 +92,14 @@ function createGraph(){
 
 	// /* Import graph */
 	artistgraph = new Graph()
-	artistgraph.import(artist_graph_3D);
+	artistgraph.import(milangraph);
 	for(let n of artistgraph.nodes()){
 		const x = artistgraph.getNodeAttribute(n, 'x');
 		const y = artistgraph.getNodeAttribute(n, 'y');
-		const z = artistgraph.getNodeAttribute(n, 'z') || 0;
+		// const z = artistgraph.getNodeAttribute(n, 'z') || 0;
 		artistgraph.setNodeAttribute(n, 'x', x*100);
 		artistgraph.setNodeAttribute(n, 'y', y*100);
-		artistgraph.setNodeAttribute(n, 'z', z*100);
+		// artistgraph.setNodeAttribute(n, 'z', z*100);
 	}
 	// for(let n of artistgraph.nodes()){
 
@@ -149,9 +148,7 @@ function initViz(){
 
 	/* CAMERA */
 	camera = new THREE.PerspectiveCamera( 50, renderer.domElement.clientWidth/renderer.domElement.clientHeight, 0.01, 100000 );
-	camera.position.x = 10;
-	camera.position.y = 1;
-	camera.position.z = 200;
+	camera.position.set(110.36795311928645, 68.4348059792565, -22.304685669264614);
 	camera.near = 0.001;
 	camera.far = 100000;
 	scene.add(camera);
@@ -181,13 +178,13 @@ function initViz(){
 		graph: {
 			nodes: artistgraph.nodes().map(n=>new Object({
 				key: n,
-				x: artistgraph.getNodeAttribute(n, 'x'),
-				y: artistgraph.getNodeAttribute(n, 'y'),
-				z: artistgraph.getNodeAttribute(n, 'z'),
+				x: artistgraph.getNodeAttribute(n, 'pos3D')[0]*10000,
+				y: artistgraph.getNodeAttribute(n, 'pos3D')[1]*10000,
+				z: artistgraph.getNodeAttribute(n, 'pos3D')[2]*10000,
 				r: artistgraph.getNodeAttribute(n, 'r')/255,
 				g: artistgraph.getNodeAttribute(n, 'g')/255,
 				b: artistgraph.getNodeAttribute(n, 'b')/255,
-				size: artistgraph.getNodeAttribute(n, 'eigencentrality')*15,
+				size: 5+artistgraph.getNodeAttribute(n, 'eigencentrality')*150,
 				hovered: false,
 				highlighted: false,
 				selected: false
@@ -204,7 +201,7 @@ function initViz(){
 					key: e,
 					source: sourceIdx, 
 					target: targetIdx,
-					width: artistgraph.getEdgeAttribute(e, 'weight') || 1.0,
+					width: 1.0,//artistgraph.getEdgeAttribute(e, 'weight') || 1.0,
 					useNodeColor: true,
 					// opacity: 1.0
 					opacity: (()=>{
@@ -223,6 +220,7 @@ function initViz(){
 
 		PROFILE: false
 	});
+	latticeMesh.position.set(8,20,-15);
 
 	latticeMesh.frustumCulled = false;
 	scene.add(latticeMesh);
