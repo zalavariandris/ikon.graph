@@ -6,9 +6,9 @@ class Rods extends THREE.Mesh{
 		nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap, 
 		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap}){
 		/* base geometry */
-		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1, 6, 1, false);
-		// const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
-		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+		// const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1, 6, 1, false);
+		const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
+		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI/2));
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, -0.5));
 
 		/* geometry */
@@ -22,7 +22,6 @@ class Rods extends THREE.Mesh{
 		geo.setAttribute('edgeIndex', new THREE.InstancedBufferAttribute(new Float32Array(edgeIndices), 1));
 
 		/* source/target node indices */
-		
 		geo.setAttribute('sourceNodeIndex', new THREE.InstancedBufferAttribute(new Float32Array(links.map(l=>l.source)), 1));
 		geo.setAttribute('targetNodeIndex', new THREE.InstancedBufferAttribute(new Float32Array(links.map(l=>l.target)), 1));
 				
@@ -45,9 +44,7 @@ class Rods extends THREE.Mesh{
 
 				edgeWidthMap: {value: edgeWidthMap},
 				edgeOpacityMap: {value: edgeOpacityMap},
-				edgeColorMap: {value: edgeColorMap},
-				edgeUseNodeColorMap: {value: edgeUseNodeColorMap},
-				edgeColumns: {value: edgeColorMap.image.width},
+				edgeColumns: {value: edgeWidthMap.image.width},
 				...THREE.UniformsLib[ "lights" ]
 			},
 			vertexShader: `
@@ -74,7 +71,6 @@ class Rods extends THREE.Mesh{
 			uniform float edgeColumns;
 			attribute float edgeIndex;
 			uniform sampler2D edgeWidthMap;
-			uniform sampler2D edgeUseNodeColorMap;
 			uniform sampler2D edgeOpacityMap;
 
 			//

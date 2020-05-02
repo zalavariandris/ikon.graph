@@ -235,31 +235,7 @@ class LatticeMesh extends THREE.Group{
 		});
 		
 		this.spheres.material.transparent=true;
-		// this.spheres.position.z=1;
 		this.spheres.name = 'nodes';
-		
-
-		// this.createCircles();
-		// this.add(this.circles);
-
-		// this.createBillboard();
-		// this.add(this.billboard);	
-		// this.lines = new Lines({
-		// 	links: this.graph.edges,
-		// 	nodePositionMap: this.nodePositionMap,
-		// 	nodeColorMap: this.nodeColorMap,
-		// 	nodeSizeMap: this.nodeSizeMap,
-		// 	nodeFlagsMap: this.nodeFlagsMap,
-		// 	edgeWidthMap: this.edgeWidthMap,
-		// 	edgeOpacityMap: this.edgeOpacityMap,
-		// 	edgeColorMap: this.edgeColorMap,
-		// 	edgeUseNodeColorMap: this.useNodeColorMap
-		// });
-		// this.lines.visible=true;
-		// this.add(this.lines);
-
-		// this.createStripes();
-		// this.add(this.stripes);
 
 		this.rods = new Rods({
 			links: this.graph.edges,
@@ -268,9 +244,7 @@ class LatticeMesh extends THREE.Group{
 			nodeSizeMap: this.nodeSizeMap,
 			nodeFlagsMap: this.nodeFlagsMap,
 			edgeWidthMap: this.edgeWidthMap,
-			edgeOpacityMap: this.edgeOpacityMap,
-			edgeColorMap: this.edgeColorMap,
-			edgeUseNodeColorMap: this.useNodeColorMap
+			edgeOpacityMap: this.edgeOpacityMap
 		});
 		this.rods.material.depthTest = true;
 		this.add(this.rods);
@@ -403,22 +377,6 @@ class LatticeMesh extends THREE.Group{
 			TextureType: THREE.FloatType
 		});
 
-		this.edgeColorMap = createMap({
-			values: this.graph.edges.flatMap(edge=>[edge.r, edge.g, edge.b]),
-			DataType: Float32Array,
-			itemSize: 3,
-			TextureFormat: THREE.RGBFormat,
-			TextureType: THREE.FloatType
-		});
-
-		this.useNodeColorMap = createMap({
-			values: this.graph.edges.map(edge=>edge.useNodeColor),
-			DataType: Uint8ClampedArray,
-			itemSize: 1,
-			TextureFormat: THREE.LuminanceFormat,
-			TextureType: THREE.UnsignedByteType
-		});
-
 		this.edgeOpacityMap = createMap({
 			values: this.graph.edges.map(edge=>edge.opacity),
 			DataType: Float32Array,
@@ -483,6 +441,12 @@ class LatticeMesh extends THREE.Group{
 			if(Math.fround(edge.width)!=this.edgeWidthMap.image.data[i]){
 				if(!diff.edges.has(i)){diff.edges.set(i, {});}
 				diff.edges.get(i).width = edge.width;
+			}
+
+			// opacity
+			if(Math.fround(edge.opacity)!=this.edgeOpacityMap.image.data[i]){
+				if(!diff.edges.has(i)){diff.edges.set(i, {});}
+				diff.edges.get(i).opacity = edge.opacity;
 			}
 		}
 
@@ -554,6 +518,11 @@ class LatticeMesh extends THREE.Group{
 			if(changes.hasOwnProperty('width')){
 				this.edgeWidthMap.image.data[i] = changes.width;
 				this.edgeWidthMap.needsUpdate = true;
+			}
+
+			if(changes.hasOwnProperty('opacity')){
+				this.edgeOpacityMap.image.data[i] = changes.opacity;
+				this.edgeOpacityMap.needsUpdate = true;
 			}
 		}
 	}
