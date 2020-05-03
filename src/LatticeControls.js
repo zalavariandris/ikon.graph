@@ -17,7 +17,12 @@ class LatticeControls extends THREE.Object3D{
 			if(this.enabled===false) return;
 
 			// find closest intersection with points
-			const mouse = {x: ( event.clientX / this.domElement.clientWidth  ) * 2 - 1, y: -( event.clientY / this.domElement.clientHeight ) * 2 + 1};
+			const bbox = this.domElement.getBoundingClientRect();
+			const mouse = {
+				x: ( event.clientX-bbox.x) / bbox.width *2  - 1, 
+				y: (-event.clientY+bbox.y) / bbox.height *2 + 1
+			};
+			
 			this.raycaster.setFromCamera(mouse, this.camera);
 			const intersects = this.raycaster.intersectObject(this.latticemesh, false);
 			let closestIdx = intersects.sort(i=>i.distance).map(i=>i.index)[0];

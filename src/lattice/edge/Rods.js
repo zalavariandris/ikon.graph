@@ -6,8 +6,8 @@ class Rods extends THREE.Mesh{
 		nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap, 
 		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap}){
 		/* base geometry */
-		// const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1, 6, 1, false);
-		const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
+		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1, 3, 1, false);
+		// const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI/2));
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, -0.5));
 

@@ -5,6 +5,8 @@ import Spheres from './node/Spheres.js'
 import Lines from './edge/Lines.js'
 import Rods from './edge/Rods.js'
 
+
+
 const NodeFlags = {
 	Hovered: 1,
 	Highlighted: 2,
@@ -282,6 +284,13 @@ class LatticeMesh extends THREE.Group{
 		const constantScreenSize = this.getObjectByName('nodes').material.uniforms.constantScreenSize.value;
 		const nodes = this.graph.nodes;
 		const data = this.nodePositionMap.image.data;
+
+		let inverseMatrix = new THREE.Matrix4();
+		inverseMatrix.getInverse( this.matrixWorld );
+		let ray = new THREE.Ray()
+		ray.copy( raycaster.ray ).applyMatrix4( inverseMatrix );
+
+
 		for(let i=0; i<nodes.length; i++){
 			let node = nodes[i];
 			let center = new THREE.Vector3().fromArray( data, i * 3 );
@@ -290,17 +299,17 @@ class LatticeMesh extends THREE.Group{
 			var hit;
 			if(constantScreenSize){
 				/* ScreenSize hitTest */
-				const A = center.clone().sub(raycaster.ray.origin).normalize();
-				const B = raycaster.ray.direction.clone().normalize();
+				const A = center.clone().sub(ray.origin).normalize();
+				const B = ray.direction.clone().normalize();
 				const angle = A.dot(B);
 				hit = angle>(1.0-size*0.00001)
 			}else{
 				// /* WorldsSize hitTest */
-				const hit = raycaster.ray.intersectsSphere(new THREE.Sphere(center, size/2));
+				const hit = ray.intersectsSphere(new THREE.Sphere(center, size/2));
 			}
 
 			if(hit){
-				var distanceSqr = center.distanceToSquared(raycaster.ray.origin);
+				var distanceSqr = center.distanceToSquared(ray.origin);
 				if ( distanceSqr < Math.pow(raycaster.near, 2) || distanceSqr > Math.pow(raycaster.far, 2) ) continue;
 				intersects.push({
 					index: i,

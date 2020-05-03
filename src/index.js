@@ -26,6 +26,7 @@ window.Graph = Graph;
 // GRAPH MESH
 // import GraphMesh from './GraphMesh.js'
 import {LatticeMesh, NodeFlags} from './lattice/LatticeMesh.js'
+import CanvasLabels from './annotation/CanvasLabels.js'
 // annotations
 import HTMLLabels from './annotation/HTMLLabels.js'
 import Simulation from './Simulation.js'
@@ -46,6 +47,7 @@ window.chroma = chroma;
 var artistgraph;
 
 // three
+var container;
 var scene;
 var camera;
 var renderer;
@@ -58,6 +60,7 @@ var simulation;
 // graph mesh
 var latticeMesh;
 var labels;
+var canvasLabels;
 
 
 /***** GRAPH *****/
@@ -133,14 +136,14 @@ function createGraph(){
 
 /***** VIZ *****/
 function initViz(){
-	/* Setup REDNERER */
+	/* Setup RENDERER */
 	let canvas = document.createElement('canvas');
+
 	canvas.id='graphCanvas';
-	document.body.appendChild(canvas);
+	container.appendChild(canvas);
 	renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: false, alpha: false });
 	renderer.setClearColor('hsl(0, 0%, 20%)');
 	renderer.setSize( renderer.domElement.clientWidth, renderer.domElement.clientHeight, false);
-	document.body.appendChild( renderer.domElement );
 	window.renderer = renderer;
 
 	/* setup SCENE */
@@ -201,7 +204,7 @@ function initViz(){
 					key: e,
 					source: sourceIdx, 
 					target: targetIdx,
-					width: 1.0,//artistgraph.getEdgeAttribute(e, 'weight') || 1.0,
+					width: 1+artistgraph.getEdgeAttribute(e, 'weight')*0.03 || 1.0,
 					useNodeColor: true,
 					// opacity: 1.0
 					opacity: (()=>{
@@ -226,7 +229,36 @@ function initViz(){
 	scene.add(latticeMesh);
 	window.latticeMesh = latticeMesh;
 
-	/* LABELS */
+	/*CanvasLabels*/
+	canvasLabels = new CanvasLabels({
+		labels: artistgraph.nodes().map(n=>{
+			return n;
+		}),
+		position: n=>{
+			const i = latticeMesh.indexOfNode(n);
+
+			return new THREE.Vector3(
+				latticeMesh.graph.nodes[i].x,
+				latticeMesh.graph.nodes[i].y,
+				latticeMesh.graph.nodes[i].z
+			).applyMatrix4(latticeMesh.matrixWorld);
+		},
+		visible: (n)=>{
+			return artistgraph.getNodeAttribute(n, 'eigencentrality')>0.5;
+		},
+		fontSize: n=>{
+			const s = artistgraph.getNodeAttribute(n, 'eigencentrality')*100
+			return s.toFixed()+'px';
+		}
+	});
+	container.appendChild(canvasLabels.domElement);
+	canvasLabels.domElement.width = container.clientWidth;
+	canvasLabels.domElement.height = container.clientHeight;
+	// debugger
+
+
+
+	/* HTML LABELS */
 	labels = new HTMLLabels({
 		keys: artistgraph.nodes(),
 		text: (n)=>{
@@ -234,28 +266,34 @@ function initViz(){
 		},
 		position: (n)=>{
 			const i = latticeMesh.indexOfNode(n);
+
 			return new THREE.Vector3(
 				latticeMesh.graph.nodes[i].x,
 				latticeMesh.graph.nodes[i].y,
 				latticeMesh.graph.nodes[i].z
-			)
+			).applyMatrix4(latticeMesh.matrixWorld);
 		},
 		color: (n)=>{
 			return new THREE.Color(
 				artistgraph.getNodeAttribute(n, 'r')/255,
 				artistgraph.getNodeAttribute(n, 'g')/255,
 				artistgraph.getNodeAttribute(n, 'b')/255
-			)
+			);
 		},
 		visible: (n)=>{
 			const i = latticeMesh.indexOfNode(n);
 			return	latticeMesh.graph.nodes[i].hovered ||
 					latticeMesh.graph.nodes[i].highlighted ||
 					latticeMesh.graph.nodes[i].selected;
+		},
+		fontSize: n=>{
+			const s = 8+artistgraph.getNodeAttribute(n, 'eigencentrality')*50
+			return s.toFixed()+'px';
 		}
 	});
 	window.labels = labels;
-	document.body.appendChild(labels.domElement);
+	labels.domElement.id = 'labels';
+	container.appendChild(labels.domElement);
 
 	/* Simulation */
 	simulation = new Simulation({
@@ -414,8 +452,15 @@ function initGui(){
 function init(){
 	createGraph();
 
+	container = document.createElement('div');
+	container.id = 'container';
+	container.classList.add('container');
+	document.body.appendChild(container);
+
 	/* SEARCH */
 	let searchComponent = new AutoCompleteComponent(artistgraph.nodes());
+
+	searchComponent.domElement.id = 'search';
 	searchComponent.addEventListener('input', (event)=>{
 		/* clear current highlights */
 		for(let i=0; i<latticeMesh.graph.nodes.length; i++){
@@ -457,7 +502,7 @@ function init(){
 			labels.patch(labels.diff());
 		}
 	});
-	document.body.append(searchComponent.domElement);
+	container.appendChild(searchComponent.domElement);
 
 	/* graph viz */
 	initViz();
@@ -466,7 +511,7 @@ function init(){
 	const graphInfo = document.createElement('div');
 	graphInfo.id = "graphInfo";
 	graphInfo.innerText = `nodes: ${latticeMesh.graph.nodes.length}, edges: ${latticeMesh.graph.edges.length}`;
-	document.body.appendChild(graphInfo);
+	container.appendChild(graphInfo);
 
 	const playButton = document.createElement('button');
 	playButton.style.marginLeft='1em';
@@ -511,6 +556,7 @@ function animate() {
 	// render
 	cameraControls.update();
 	labels.update(camera);
+	canvasLabels.update(camera);
 	renderer.render( scene, camera );
 	requestAnimationFrame( animate );
 }

@@ -1,20 +1,15 @@
 class HTMLLabels{
-	constructor({keys, text, position, color, visible}){
+	constructor({keys, text, position, color, visible, fontSize}){
 		this.keys = keys;
 		this.text = text;
 		this.position = position;
 		this.color = color;
 		this.visible = visible;
+		this.fontSize = fontSize;
 
 		// root element
 		this.domElement = document.createElement('div');
-		this.domElement.style.position = 'fixed';
-		this.domElement.style.left = "0px";
-		this.domElement.style.top = "0px";
-		this.domElement.style.width = "100vw";
-		this.domElement.style.height = "100vh";
-		this.domElement.style.zIndex = 1;
-		this.domElement.style.pointerEvents = 'none';
+		this.domElement.classList.add('labels-component');
 
 		this.elements = new Map(this.keys.map(key=>[key, this.renderItem(key)]))
 	}
@@ -26,6 +21,7 @@ class HTMLLabels{
 		elem.style.position = "absolute";
 		elem.style.pointerEvents = 'none';
 		elem.style.visibility = 'hidden';
+		elem.style.fontSize = this.fontSize(key);
 
 		// create label box
 		// elem.style.color = this.color(key).getStyle();
@@ -102,21 +98,6 @@ class HTMLLabels{
 			elem.style.zIndex = i;
 			// elem.children[0].innerText = key+'\n'+elem.style.left+'\n#'+i;
 		});
-		
-		// for(let [key, elem] of this.elements){
-		// 	if(!elem.parentElement) continue
-
-		// 	// find screen position
-		// 	const pos = this.position(key);
-		// 	const screenPos = pos.clone().applyMatrix4(m);
-
-		// 	// hide labels behind the camera
-		// 	elem.style.visibility = screenPos.z<1 ? 'visible' : 'hidden';
-
-		// 	if(screenPos.z>=1) continue;
-		// 	elem.style.left = (+screenPos.x+1)/2*window.innerWidth  + 'px';
-		// 	elem.style.top  = (-screenPos.y+1)/2*window.innerHeight + 'px';
-		// }
 	}
 };
 

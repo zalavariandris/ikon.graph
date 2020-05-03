@@ -7,20 +7,69 @@ body{
 	font-family: sans-serif;
 }
 
-canvas{
-	position: fixed;
+.CanvasLabels-component{
+	position: absolute;
 	left: 0;
-	top: 0;
-	z-index: -1;
+	right: 0;
+	width: 100%;
+	height: 100%;
+	border: 3px solid blue;
+	z-index: 1;
+}
+
+#container{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	height: 100vh;
+	width: 100vw;
+	outline: red dashed 3px;
+	/*pointer-events: none;*/
 }
 
 #graphCanvas{
-	position: fixed;
+	position: absolute;
 	left: 0;
 	right: 0;
-	width: 100vw;
-	height: 100vh;
+	width: 100%;
+	height: 100%;
+	/*z-index: -1;*/
 }
+
+#graphInfo{
+	font-size: 10px;
+	position: absolute;
+	bottom: 0px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1;
+	background: rgba(255,255,255,0.8);
+	/*background: white;*/
+	padding: 0.25em 1em;
+	opacity: 0.55;
+}
+
+#search{
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 13px;
+
+	text-align: center;
+}
+
+#labels{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+	pointer-events: none;
+}
+
+
+/*===================*/
 
 .label{
 	pointer-events: none;
@@ -31,7 +80,7 @@ canvas{
 }
 
 .label span{
-	font-size: 10px;
+	/*font-size: 10px;*/
 	text-shadow: 1px 1px 1px white;
 	transform: translateX(-50%);
 	margin-bottom: 10px;
@@ -70,12 +119,6 @@ canvas{
 /* AUTOCOMPLETE*/
 
 .autocomplete{
-	position: fixed;
-	left: 50%;
-	transform: translateX(-50%);
-	font-size: 13px;
-
-	text-align: center;
 	z-index: 1;
 	right: 0px;
 	width: 16em;
@@ -113,18 +156,4 @@ canvas{
 
 .autocomplete-suggestions .autocomplete-suggestion.selected{
 	background: lightblue;
-}
-
-
-#graphInfo{
-	font-size: 10px;
-	position: fixed;
-	bottom: 0px;
-	left: 50%;
-	transform: translateX(-50%);
-	z-index: 1;
-	background: rgba(255,255,255,0.8);
-	/*background: white;*/
-	padding: 0.25em 1em;
-	opacity: 0.55;
 }

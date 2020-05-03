@@ -11,13 +11,23 @@ module.exports = {
     port: 8080,
     disableHostCheck: true
   },
-  plugins: [new HtmlWebpackPlugin({title: 'IKON.graph',})],
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'IKON.graph'
+    })
+  ],
   module: {
   	rules: [
       {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
+      {
+        test: /\.glsl$/i,
+        use: 'raw-loader'
+      }
     ],
   }
 };
+
+
