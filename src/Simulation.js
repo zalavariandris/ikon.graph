@@ -54,9 +54,9 @@ class Simulation{
 			.sub(p2)
 
 			const distance = force.length();
-			force.normalize();
+			// force.normalize();
 
-			force.multiplyScalar(this.attraction*distance*edge.weight);
+			force.multiplyScalar(this.attraction*Math.max(0, edge.weight));
 
 			let f1 = force.clone().multiplyScalar(m2/(m1+m2));
 			let f2 = force.clone().multiplyScalar(m1/(m1+m2));
@@ -75,20 +75,20 @@ class Simulation{
 
 				force
 				.normalize()
-				.multiplyScalar(this.repulsion/distance);
+				.multiplyScalar(this.repulsion/distance/2);
 
 				this.graph.nodes[s].force.sub(force);
 				this.graph.nodes[t].force.add(force);
 			}
 		}
 
-		// apply other forces
-		for(let node of this.graph.nodes){
-			for(let force of node.forces){
-				node.force.add(force);
-			}
-			node.forces = [];
-		}
+		// // apply other forces
+		// for(let node of this.graph.nodes){
+		// 	for(let force of node.forces){
+		// 		node.force.add(force);
+		// 	}
+		// 	node.forces = [];
+		// }
 
 
 		/* Apply forces to velocity */

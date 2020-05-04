@@ -4,11 +4,11 @@ class Rods extends THREE.Mesh{
 	constructor({
 		links,
 		nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap, 
-		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap}){
+		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap, edgeCurveMap}){
 		/* base geometry */
-		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1, 3, 1, false);
+		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1.0, 3, 6, false);
 		// const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
-		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI/2));
+		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2));
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, -0.5));
 
 		/* geometry */
@@ -31,6 +31,9 @@ class Rods extends THREE.Mesh{
 			lights: true,
 			transparent: true,
 			uniforms: {
+				opacity: {value: 1.0},
+				flatShading: {value: false},
+				curviness: {value: 0.33},
 				anyNodeHighlighted: {value: false},
 				nodeConstantScreenSize: {value: true},
 				edgeConstantScreenSize: {value: true},
@@ -44,10 +47,12 @@ class Rods extends THREE.Mesh{
 
 				edgeWidthMap: {value: edgeWidthMap},
 				edgeOpacityMap: {value: edgeOpacityMap},
+				edgeCurveMap: {value: edgeCurveMap},
 				edgeColumns: {value: edgeWidthMap.image.width},
 				...THREE.UniformsLib[ "lights" ]
 			},
 			vertexShader: `
+			uniform float curviness;
 			uniform bool anyNodeHighlighted;
 			uniform bool edgeConstantScreenSize;
 			uniform bool nodeConstantScreenSize;
@@ -57,6 +62,7 @@ class Rods extends THREE.Mesh{
 			#include <inverse>
 			#include <transpose>
 			#include <pixelSizeAt>
+			#include <cubicBezier>
 
 			// pull nodes
 			uniform float nodeColumns;
@@ -72,6 +78,7 @@ class Rods extends THREE.Mesh{
 			attribute float edgeIndex;
 			uniform sampler2D edgeWidthMap;
 			uniform sampler2D edgeOpacityMap;
+			uniform sampler2D edgeCurveMap;
 
 			//
 			uniform float gap;
@@ -89,6 +96,7 @@ class Rods extends THREE.Mesh{
 				/* Pull variables */
 				float edgeWidth = pullFloat(edgeWidthMap, int(edgeIndex), int(edgeColumns));
 				float edgeOpacity = pullFloat(edgeOpacityMap, int(edgeIndex), int(edgeColumns));
+				vec3 edgeCurve = pullVec3(edgeCurveMap, int(edgeIndex), int(edgeColumns));
 
 				vec3 sourceNodePos = pullVec3(nodePositionMap, int(sourceNodeIndex), int(nodeColumns));
 				vec3 targetNodePos = pullVec3(nodePositionMap, int(targetNodeIndex), int(nodeColumns));
@@ -108,7 +116,7 @@ class Rods extends THREE.Mesh{
 				bool isHighlighted = isTargetHighlighted && isSourceHighlighted;
 				vIsHighlighted = float(isHighlighted);
 
-
+				/* Color */
 				if(isHighlighted){
 					vColor = mix(sourceNodeColor, targetNodeColor, -position.z);
 					vOpacity = edgeOpacity;
@@ -122,6 +130,7 @@ class Rods extends THREE.Mesh{
 					}
 				}
 
+				/* Position */
 				// create scale matrix
 				sourceNodeSize*=(1.0+gap);
 				targetNodeSize*=(1.0+gap);
@@ -137,16 +146,25 @@ class Rods extends THREE.Mesh{
 				mat4 scaleMatrix = mat4(
 					edgeWidth,0,0,0,
 					0,edgeWidth,0,0,
-					0,0, d-(sourceNodeSize+targetNodeSize)/2.0, 0,
+					0,0, d, 0,
 					0,0,-sourceNodeSize/2.0,1
 				);
+
 				// create lookat matrix
 				vec3 up = cameraPosition - mix(sourceNodePos, targetNodePos, -position.z);
-				mat4 lookAtMatrix = lookAt(sourceNodePos, targetNodePos,-up);
+				
+
+				// vec3 P = mix(sourceNodePos, targetNodePos, -position.z+0.0000001);
+				// vec3 Q = mix(sourceNodePos, targetNodePos, -position.z);
+				vec3 tangent;
+				edgeCurve = mix(sourceNodePos, targetNodePos, 0.5)+(normalize(edgeCurve)-0.5)*d*curviness;
+				vec3 P = cubicBezier(sourceNodePos, edgeCurve, targetNodePos, clamp(-position.z, 0.0, 0.99), tangent);
+				mat4 lookAtMatrix = lookAt(P, P+tangent, -up);
 
 				mat4 m = modelViewMatrix * lookAtMatrix * scaleMatrix;
-				vPosition = m * vec4(position, 1);
+				vPosition = m * vec4(position.xy, 0, 1);
 				
+				/* Normal */
 				vNormal = normalize(mat3(transpose(inverse(m)))*normal);
 
 				vec4 projected = projectionMatrix * vPosition;
@@ -159,6 +177,7 @@ class Rods extends THREE.Mesh{
 			fragmentShader: `
 			#include <lighting>
 			uniform float opacity;
+			uniform bool flatShading;
 			
 			varying vec4 vPosition;
 			varying vec3 vNormal;
@@ -166,13 +185,15 @@ class Rods extends THREE.Mesh{
 			varying float vOpacity;
 			varying float vIsHighlighted;
 			varying float vIsHovered;
+
 			void main(){
 				vec3 color = vColor;
-				if(vIsHighlighted>0.0 || vIsHovered>0.0){
-					// color*=lighting(vPosition.xyz, vNormal);
+				// if(vIsHighlighted>0.0 || vIsHovered>0.0){
+				if(!flatShading){
+					color*=lighting(vPosition.xyz, vNormal);
 				}
 
-				gl_FragColor = vec4(color, vOpacity);
+				gl_FragColor = vec4(color, vOpacity*opacity);
 			}`
 		});
 

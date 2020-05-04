@@ -6,7 +6,6 @@ import Lines from './edge/Lines.js'
 import Rods from './edge/Rods.js'
 
 
-
 const NodeFlags = {
 	Hovered: 1,
 	Highlighted: 2,
@@ -38,6 +37,15 @@ const includes = {
 			}
 			lighting+=ambientLightColor;
 			return lighting;
+		}
+	`,
+
+	cubicBezier: `
+		vec3 cubicBezier(vec3 P, vec3 Q, vec3 R, float t, out vec3 tangent){
+			vec3 S = mix(P, Q, t);
+			vec3 T = mix(Q, R, t);
+			tangent = T-S;
+			return mix(S, T, t);
 		}
 	`,
 
@@ -246,12 +254,17 @@ class LatticeMesh extends THREE.Group{
 			nodeSizeMap: this.nodeSizeMap,
 			nodeFlagsMap: this.nodeFlagsMap,
 			edgeWidthMap: this.edgeWidthMap,
-			edgeOpacityMap: this.edgeOpacityMap
+			edgeOpacityMap: this.edgeOpacityMap,
+			edgeCurveMap: this.edgeCurveMap
 		});
+		
 		this.rods.material.depthTest = true;
+		this.add(this.spheres);
 		this.add(this.rods);
 		this.rods.name = 'edges';
-		this.add(this.spheres);
+		this.rods.material.depthTest = false;
+		
+		this.spheres.material.depthTest = false;
 
 		/* animate positions */
 		const anim = ()=>{
@@ -391,6 +404,14 @@ class LatticeMesh extends THREE.Group{
 			DataType: Float32Array,
 			itemSize: 1,
 			TextureFormat: THREE.LuminanceFormat,
+			TextureType: THREE.FloatType
+		});
+
+		this.edgeCurveMap = createMap({
+			values: this.graph.edges.flatMap(edge=>edge.curve),
+			DataType: Float32Array,
+			itemSize: 3,
+			TextureFormat: THREE.RGBFormat,
 			TextureType: THREE.FloatType
 		});
 	}
@@ -534,6 +555,116 @@ class LatticeMesh extends THREE.Group{
 				this.edgeOpacityMap.needsUpdate = true;
 			}
 		}
+	}
+
+	darkMode(){
+		for(let i=0; i<this.graph.nodes.length;i++){
+			let color =  new THREE.Color(
+				this.graph.nodes[i].r,
+				this.graph.nodes[i].g,
+				this.graph.nodes[i].b
+			)
+
+			const hsl = color.getHSL();
+			if(hsl.s<0.5 && hsl.l<0.3){
+				color = new THREE.Color().setHSL(hsl.h, hsl.s, 1-hsl.l);
+			}
+			this.graph.nodes[i].r = color.r;
+			this.graph.nodes[i].g = color.g;
+			this.graph.nodes[i].b = color.b;
+		}
+		this.patch(this.diff());
+	}
+
+	lightMode(){
+		for(let i=0; i<this.graph.nodes.length;i++){
+			let color =  new THREE.Color(
+				this.graph.nodes[i].r,
+				this.graph.nodes[i].g,
+				this.graph.nodes[i].b
+			)
+
+			const hsl = color.getHSL();
+			if(hsl.s<0.5 && hsl.l>0.7){
+				color = new THREE.Color().setHSL(hsl.h, hsl.s, 1-hsl.l);
+			}
+			this.graph.nodes[i].r = color.r;
+			this.graph.nodes[i].g = color.g;
+			this.graph.nodes[i].b = color.b;
+		}
+		this.patch(this.diff());
+	}
+
+	darken(){
+		for(let i=0; i<this.graph.nodes.length;i++){
+			let color =  new THREE.Color(
+				this.graph.nodes[i].r,
+				this.graph.nodes[i].g,
+				this.graph.nodes[i].b
+			)
+
+			const hsl = color.getHSL();
+			color = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l*0.95);
+
+			this.graph.nodes[i].r = color.r;
+			this.graph.nodes[i].g = color.g;
+			this.graph.nodes[i].b = color.b;
+		}
+		this.patch(this.diff());
+	}
+
+	lighten(){
+		for(let i=0; i<this.graph.nodes.length;i++){
+			let color =  new THREE.Color(
+				this.graph.nodes[i].r,
+				this.graph.nodes[i].g,
+				this.graph.nodes[i].b
+			)
+
+			const hsl = color.getHSL();
+			color = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l*1.05);
+
+			this.graph.nodes[i].r = color.r;
+			this.graph.nodes[i].g = color.g;
+			this.graph.nodes[i].b = color.b;
+		}
+		this.patch(this.diff());
+	}
+
+	saturate(){
+		for(let i=0; i<this.graph.nodes.length;i++){
+			let color =  new THREE.Color(
+				this.graph.nodes[i].r,
+				this.graph.nodes[i].g,
+				this.graph.nodes[i].b
+			)
+
+			const hsl = color.getHSL();
+			color = new THREE.Color().setHSL(hsl.h, hsl.s*1.05, hsl.l);
+
+			this.graph.nodes[i].r = color.r;
+			this.graph.nodes[i].g = color.g;
+			this.graph.nodes[i].b = color.b;
+		}
+		this.patch(this.diff());
+	}
+
+	desaturate(){
+		for(let i=0; i<this.graph.nodes.length;i++){
+			let color =  new THREE.Color(
+				this.graph.nodes[i].r,
+				this.graph.nodes[i].g,
+				this.graph.nodes[i].b
+			)
+
+			const hsl = color.getHSL();
+			color = new THREE.Color().setHSL(hsl.h, hsl.s*0.95, hsl.l);
+
+			this.graph.nodes[i].r = color.r;
+			this.graph.nodes[i].g = color.g;
+			this.graph.nodes[i].b = color.b;
+		}
+		this.patch(this.diff());
 	}
 }
 
