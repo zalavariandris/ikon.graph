@@ -6,7 +6,7 @@ class Rods extends THREE.Mesh{
 		nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap, 
 		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap, edgeCurveMap}){
 		/* base geometry */
-		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1.0, 3, 8, false);
+		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1.0, 3, 4, false);
 		// const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2));
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, -0.5));
@@ -147,7 +147,7 @@ class Rods extends THREE.Mesh{
 					edgeWidth,0,0,0,
 					0,edgeWidth,0,0,
 					0,0, 1, 0,
-					0,0, 0,1
+					0,0, 0, 1
 				);
 
 				// create lookat matrix
@@ -158,7 +158,7 @@ class Rods extends THREE.Mesh{
 				// vec3 Q = mix(sourceNodePos, targetNodePos, -position.z);
 				vec3 tangent;
 				edgeCurve = mix(sourceNodePos, targetNodePos, 0.5)+(normalize(edgeCurve)-0.5)*d*curviness;
-				vec3 P = cubicBezier(sourceNodePos, edgeCurve, targetNodePos, clamp(-position.z, 0.0, 0.99), tangent);
+				vec3 P = cubicBezier(sourceNodePos, edgeCurve, targetNodePos, -position.z, tangent);
 				mat4 lookAtMatrix = lookAt(P, P+tangent, -up);
 
 				mat4 m = modelViewMatrix * lookAtMatrix * scaleMatrix;
@@ -188,12 +188,15 @@ class Rods extends THREE.Mesh{
 
 			void main(){
 				vec3 color = vColor;
-				// if(vIsHighlighted>0.0 || vIsHovered>0.0){
+
 				if(!flatShading){
 					color*=lighting(vPosition.xyz, vNormal);
 				}
-
-				gl_FragColor = vec4(color, vOpacity*opacity);
+				float alpha = vOpacity*opacity;
+				if(vIsHighlighted>0.0 || vIsHovered>0.0){
+					alpha = clamp(alpha*2.0, 0.5, 1.0);
+				}
+				gl_FragColor = vec4(color, alpha);
 			}`
 		});
 

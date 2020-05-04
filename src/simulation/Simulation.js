@@ -7,23 +7,121 @@ class Simulation{
 		this.repulsion = repulsion;
 		this.gravity = gravity;
 		this.dampening = dampening;
-		this.paused = true;
 
-		this.play();
+		// create adjacency matrix
+
+		const count = graph.nodes.length;
+		// this.forceLinks = new Float32Array(count**2*3);
+		this.forces = new Float32Array(count*3);
+		this.adj = Array.from({length:count}).map(v=>Array.from({length:count}));
+		for(let edge of this.graph.edges){
+			let attributes = {weight: Math.max(0, edge.weight)};
+			this.adj[edge.source][edge.target] = attributes;
+			this.adj[edge.target][edge.source] = attributes;
+		}
+
+		// this.positions = new Float32Array(graph.nodes.flatMap(node=>[node.x, node.y, node.z]));
+		// this.forces = []
+		// this.velocities = new Float32Array(Array.from({length: graph.nodes.length*3}).map(d=>0));
+
+		// //GPU
+		// this.rttScene = new THREE.Scene();
+		// this.quad = new THREE.Mesh(
+		// 	new THREE.PlaneBufferGeometry(1, 1),
+		// 	new THREE.MeshBasicMaterial({
+		// 		color: 'green'
+		// 	})
+		// );
+		// this.rttScene.add(this.quad);
+		// this.rttCamera = new THREE.OrthographicCamera( -0.5,0.5, 0.5, -0.5, 0, 2 );
+		// this.rttCamera.position.set(0,0,1);
+		// this.rttTexture = new THREE.WebGLRenderTarget(500, 500, {
+		// 	// format: THREE.RGBFormat,
+		// 	// depthBuffer: false,
+		// 	// stencilBuffer: false,
+		// 	minFilter: THREE.LinearFilter, 
+		// 	magFilter: THREE.NearestFilter
+		// });
+
+		// this.debugGPUMesh = new THREE.Mesh(
+		// 	new THREE.BoxBufferGeometry(10, 10, 10),
+		// 	new THREE.MeshPhongMaterial({
+		// 		color: 'white',
+		// 		map: this.rttTexture.texture
+		// 	})
+		// );
 	}
 
-	play(){
-		if(!this.paused){
-			this.step()
-		}
-		requestAnimationFrame(()=>this.play())
+	render(renderer){
+		const rt = renderer.getRenderTarget()
+		renderer.setRenderTarget(this.rttTexture);
+		renderer.render(this.rttScene, this.rttCamera);
+		renderer.setRenderTarget(rt);
 	}
 
 	step(){
 		/* Calculate forces */
-		// reset forces
 		for(let i=0; i<this.graph.nodes.length; i++){
-			this.graph.nodes[i].force = new THREE.Vector3(0,0,0);
+			this.forces[i*3+0] = 0;
+			this.forces[i*3+1] = 0;
+			this.forces[i*3+2] = 0;
+		}
+
+		// apply attraction	
+		// for(let i=0; i<this.graph.nodes.length**2; i++){
+		// 	let n1 = Math.floor(i/this.graph.nodes.length);
+		// 	let n2 = i-n1*this.graph.nodes.length;
+		//  if(n1==n2) continue;
+		for(let n1=0; n1<this.graph.nodes.length; n1++){
+			for(let n2=0; n2<this.graph.nodes.length; n2++){
+				if(n1==n2) continue
+				/* Apply repulsion between nodes */
+				const p1 = this.graph.nodes[n1].pos;
+				const p2 = this.graph.nodes[n2].pos;
+
+				const repulsion = new THREE.Vector3()
+				.add(p1)
+				.sub(p2);
+
+				const distanceSq = repulsion.lengthSq();
+				repulsion
+				.multiplyScalar(this.repulsion/distanceSq);
+
+				this.forces[n1*3+0]-=repulsion.x;
+				this.forces[n1*3+1]-=repulsion.y;
+				this.forces[n1*3+2]-=repulsion.z;
+
+				this.forces[n2*3+0]+=repulsion.x;
+				this.forces[n2*3+1]+=repulsion.y;
+				this.forces[n2*3+2]+=repulsion.z;
+
+				/* Apply attraction along edges */
+				let edge = this.adj[n1][n2];
+				if(edge!=undefined){
+					// const p1 = this.graph.nodes[n1].pos;
+					// const p2 = this.graph.nodes[n2].pos;
+
+					const m1 = this.graph.nodes[n1].mass;
+					const m2 = this.graph.nodes[n2].mass;
+
+					const attraction = new THREE.Vector3()
+					.add(p1)
+					.sub(p2)
+
+					// const distance = attraction.length();
+					// force.normalize();
+
+					attraction.multiplyScalar(this.attraction* edge.weight);
+
+					this.forces[n1*3+0] -= attraction.x * m2/(m1+m2);
+					this.forces[n1*3+1] -= attraction.y * m2/(m1+m2);
+					this.forces[n1*3+2] -= attraction.z * m2/(m1+m2);
+
+					this.forces[n2*3+0] += attraction.x * m1/(m1+m2);
+					this.forces[n2*3+1] += attraction.y * m1/(m1+m2);
+					this.forces[n2*3+2] += attraction.z * m1/(m1+m2);
+				}
+			}
 		}
 
 		// apply gravity
@@ -31,69 +129,22 @@ class Simulation{
 			const gravity = new THREE.Vector3(0,0,0);
 			gravity.sub(this.graph.nodes[i].pos);
 
-			const distance = gravity.length()
+			// const distance = gravity.length()
 
 			gravity.multiplyScalar(/*distance*/this.gravity);
 
-			this.graph.nodes[i].force.add(gravity);
+			this.forces[i*3+0] += gravity.x;
+			this.forces[i*3+1] += gravity.y;
+			this.forces[i*3+2] += gravity.z;
 		}
-
-		// apply attraction	
-		for(let edge of this.graph.edges){
-			const n1 = edge.source;
-			const n2 = edge.target;
-
-			const p1 = this.graph.nodes[n1].pos;
-			const p2 = this.graph.nodes[n2].pos;
-
-			const m1 = this.graph.nodes[n1].mass;
-			const m2 = this.graph.nodes[n2].mass;
-
-			const force = new THREE.Vector3()
-			.add(p1)
-			.sub(p2)
-
-			const distance = force.length();
-			// force.normalize();
-
-			force.multiplyScalar(this.attraction*Math.max(0, edge.weight));
-
-			let f1 = force.clone().multiplyScalar(m2/(m1+m2));
-			let f2 = force.clone().multiplyScalar(m1/(m1+m2));
-			this.graph.nodes[n1].force.sub(f1);
-			this.graph.nodes[n2].force.add(f2);
-		}
-
-		// apply repulsion
-		for(let s=0; s<this.graph.nodes.length; s++){
-			for(let t=s+1; t<this.graph.nodes.length; t++){
-				const force = new THREE.Vector3()
-				.add(this.graph.nodes[s].pos)
-				.sub(this.graph.nodes[t].pos);
-
-				const distance = force.length();
-
-				force
-				.normalize()
-				.multiplyScalar(this.repulsion/distance/2);
-
-				this.graph.nodes[s].force.sub(force);
-				this.graph.nodes[t].force.add(force);
-			}
-		}
-
-		// // apply other forces
-		// for(let node of this.graph.nodes){
-		// 	for(let force of node.forces){
-		// 		node.force.add(force);
-		// 	}
-		// 	node.forces = [];
-		// }
-
 
 		/* Apply forces to velocity */
 		for(let i=0; i<this.graph.nodes.length; i++){
-			this.graph.nodes[i].velocity.add(this.graph.nodes[i].force);
+			this.graph.nodes[i].velocity.add({
+				x: this.forces[i*3+0],
+				y: this.forces[i*3+1],
+				z: this.forces[i*3+2],
+			});
 		}
 
 		// apply dampening

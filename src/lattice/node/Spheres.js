@@ -3,7 +3,8 @@ import * as THREE from 'three';
 class Spheres extends THREE.Mesh{
 	constructor({nodes, nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap}){
 		// baseGeo
-		const baseGeo = new THREE.SphereBufferGeometry(0.5);
+		const baseGeo = new THREE.SphereBufferGeometry(0.5, 10, 2, 0, Math.PI*2, Math.PI/2, Math.PI/2);
+		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI/2));
 
 		// instance baseGeo
 		const geo = new THREE.InstancedBufferGeometry();
@@ -16,6 +17,7 @@ class Spheres extends THREE.Mesh{
 		// create material
 		const mat = new THREE.ShaderMaterial({
 			lights: true,
+			// wireframe: true,
 			// transparent: true,
 			uniforms: {
 				anyHighlighted: {value: false},

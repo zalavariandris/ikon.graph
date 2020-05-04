@@ -50,7 +50,9 @@ var latticeMesh;
 
 // simulation
 var simulation;
+var paused = true;
 
+var simMesh; // used to display texture data in simulation
 // annotations
 var labels;
 var canvasLabels;
@@ -72,15 +74,26 @@ function importantNeighbors(graph, n, importance=1){
 }
 
 function createGraph(){
+
 	// /* Import graph */
 	artistgraph = new Graph()
 	artistgraph.import(milangraph);
 	for(let n of artistgraph.nodes()){
 		const x = artistgraph.getNodeAttribute(n, 'x');
 		const y = artistgraph.getNodeAttribute(n, 'y');
-		// const z = artistgraph.getNodeAttribute(n, 'z') || 0;
-		artistgraph.setNodeAttribute(n, 'x', x*100);
-		artistgraph.setNodeAttribute(n, 'y', y*100);
+		// adjust node 2D positions
+		artistgraph.setNodeAttribute(n, 'x', x*100*2.5-160);
+		artistgraph.setNodeAttribute(n, 'y', y*100*2.5-65);
+
+		// adjust node`s 3D positions
+		let pos3D = new THREE.Vector3().fromArray( artistgraph.getNodeAttribute(n, 'pos3D') )
+		let m = new THREE.Matrix4().compose(
+			new THREE.Vector3(10,-15,-20),
+			new THREE.Quaternion().setFromEuler(new THREE.Euler( -2.8185335772428246, 0.8317149667489626+Math.PI,  0.4149537506579619)),
+			new THREE.Vector3(10000,10000,10000));
+		pos3D.applyMatrix4(m);
+		pos3D.toArray(artistgraph.getNodeAttribute(n, 'pos3D'));
+
 		// artistgraph.setNodeAttribute(n, 'z', z*100);
 	}
 
@@ -124,7 +137,7 @@ function initViz(){
 	window.camera = camera;
 
 	/* grid */
-	// scene.add(new THREE.GridHelper(100, 10));
+	scene.add(new THREE.GridHelper(100, 10));
 
 	/* LIGHTING */
 	let keyLight = new THREE.PointLight('white', 0.7);
@@ -150,8 +163,8 @@ function initViz(){
 				// x: artistgraph.getNodeAttribute(n, 'pos3D')[0]*10000,
 				// y: artistgraph.getNodeAttribute(n, 'pos3D')[1]*10000,
 				// z: artistgraph.getNodeAttribute(n, 'pos3D')[2]*10000,
-				x: artistgraph.getNodeAttribute(n, 'x')*2.5-160,
-				y: artistgraph.getNodeAttribute(n, 'y')*2.5-65,
+				x: artistgraph.getNodeAttribute(n, 'x'),
+				y: artistgraph.getNodeAttribute(n, 'y'),
 				z: Math.random()*0.1,
 				r: artistgraph.getNodeAttribute(n, 'r')/255,
 				g: artistgraph.getNodeAttribute(n, 'g')/255,
@@ -171,12 +184,12 @@ function initViz(){
 					key: e,
 					source: sourceIdx, 
 					target: targetIdx,
-					width: (1+Math.log(artistgraph.getEdgeAttribute(e, 'weight')*0.1))*PIXEL_RATIO || 1.0,
+					width: 1+artistgraph.getEdgeAttribute(e, 'weight')*0.03*PIXEL_RATIO || 1.0,
 					useNodeColor: true,
 					// opacity: 1.0
 					opacity: (()=>{
 						const weight = artistgraph.getEdgeAttribute(e, 'weight') || 1.0;
-						if(weight<4){
+						if(weight<6){
 							return 0.1;
 						}else if(weight<10){
 							return 0.3;
@@ -197,12 +210,19 @@ function initViz(){
 	scene.add(latticeMesh);
 	window.latticeMesh = latticeMesh;
 
+	// let gizmo = new TransformControls(camera, document.body);
+	// gizmo.size = 1;
+	// gizmo.attach(latticeMesh);
+	// gizmo.mode = 'rotate';
+	// scene.add(gizmo);
+
 	/*CanvasLabels*/
 	canvasLabels = new CanvasLabels({
 		defaultColor: new THREE.Color(0,0,0),
 		labels: artistgraph.nodes().map(n=>{
 			return n;
 		}),
+
 		position: n=>{
 			const i = latticeMesh.indexOfNode(n);
 
@@ -252,7 +272,7 @@ function initViz(){
 		}
 	});
 	container.appendChild(canvasLabels.domElement);
-	canvasLabels.domElement.style.opacity = 0.8;
+	canvasLabels.domElement.style.opacity = 1.0;
 	canvasLabels.domElement.width = container.clientWidth*PIXEL_RATIO;
 	canvasLabels.domElement.height = container.clientHeight*PIXEL_RATIO;
 	// debugger
@@ -310,11 +330,20 @@ function initViz(){
 				weight: edge.width || 1.0
 			}))
 		},
-		attraction: 0.0003,
-		repulsion: -0.2,
+		attraction: 0.0005,
+		repulsion: -0.15,
 		gravity: 0.005,
 		dampening: 0.9
 	});
+
+	// simMesh = new THREE.Mesh(
+	// 	new THREE.BoxBufferGeometry(10, 10, 10),
+	// 	new THREE.MeshPhongMaterial({
+	// 		color: 'white',
+	// 		map: simulation.renderTarget.texture
+	// 	}));
+	// scene.add(simMesh)
+
 	window.simulation = simulation;
 
 	/* CONTROLS */
@@ -331,6 +360,7 @@ function initViz(){
 		MIDDLE: THREE.MOUSE.DOLLY,
 		RIGHT: THREE.MOUSE.ROTATE
 	}
+	window.cameraControls = cameraControls;
 
     /* LatticeControls */
     var latticeControls = new LatticeControls(camera, renderer.domElement);
@@ -478,42 +508,64 @@ function initViz(){
 	graphInfo.innerText = `nodes: ${latticeMesh.graph.nodes.length}, edges: ${latticeMesh.graph.edges.length}`;
 	container.appendChild(graphInfo);
 
+
+	// actionBox
+	const actionBox = document.createElement('div');
+	actionBox.id = "actionBox";
+	container.appendChild(actionBox);
 	// play button
 	const playButton = document.createElement('button');
 	
 	playButton.innerText = "\u25B6";
-	graphInfo.append(playButton);
+	actionBox.append(playButton);
 	playButton.addEventListener('click', ()=>{
-		simulation.paused = !simulation.paused;
-		playButton.innerText = simulation.paused ? "\u25B6" : '||'
+		paused = !paused;
+		playButton.innerText = paused ? "\u25B6" : '||'
 	});
 
 	// color mode
 	colorModeBtn = document.createElement('button');
-	colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;
+	colorModeBtn.innerText = colorMode == "dark" ? "light" : "dark" ;
 	
 	colorModeBtn.addEventListener('click', ()=>{
 		if(colorMode=="dark"){
 			modeLight();
-			colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;
+			colorModeBtn.innerText = colorMode == "dark" ? "light" : "dark" ;
 		}else{
 			modeDark();
-			colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;
+			colorModeBtn.innerText = colorMode == "dark" ? "light" : "dark" ;
 		}
 	})
-	graphInfo.appendChild(colorModeBtn);
+	actionBox.appendChild(colorModeBtn);
 
 	// depthTest mode
-	depthTestButton = document.createElement('input');
-	depthTestButton.type='checkbox';
+	var depthTest = false;
+	depthTestButton = document.createElement('button');
+	depthTestButton.innerText = 'depthTest';
+	depthTestButton.style.opacity = 0.5;
 	depthTestButton.addEventListener('click', ()=>{
-		if(depthTestButton.checked){
-			mode3D();
+		depthTest = !depthTest;
+		if(depthTest){
+			depthTestButton.style.opacity = 1.0;
+			setDepthTestTrue();
 		}else{
-			mode2D();
+			depthTestButton.style.opacity = 0.5;
+			setDepthTestFalse();
 		}
 	});
-	graphInfo.appendChild(depthTestButton);
+	// actionBox.appendChild(depthTestButton);
+
+	//
+
+	const layout2DBtn = document.createElement('button');
+	// actionBox.appendChild(layout2DBtn);
+	layout2DBtn.innerText = "2D"
+	layout2DBtn.addEventListener('click', initialLayout2D);
+
+	const layout3DBtn = document.createElement('button');
+	// actionBox.appendChild(layout3DBtn);
+	layout3DBtn.innerText = "3D"
+	layout3DBtn.addEventListener('click', initialLayout3D);
 }
 
 function init(){
@@ -535,7 +587,7 @@ function modeLight(){
 	// renderer.setClearColor('hsl(0, 0%, 90%)')
 	latticeMesh.lightMode();
 	colorMode = "light";
-	colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;;
+	colorModeBtn.innerText = colorMode == "dark" ? "light" : "dark" ;;
 	canvasLabels.defaultColor = new THREE.Color(0,0,0);
 }
 
@@ -544,12 +596,30 @@ function modeDark(){
 	// renderer.setClearColor('hsl(0, 0%, 20%)')
 	latticeMesh.darkMode();
 	colorMode = "dark";
-	colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;;
+	colorModeBtn.innerText = colorMode == "dark" ? "light" : "dark" ;;
 	canvasLabels.defaultColor = new THREE.Color(1,1,1);
 }
 var dimensionMode;
 
-function mode2D(){
+function initialLayout2D(){
+	for(let node of latticeMesh.graph.nodes){
+		node.x = artistgraph.getNodeAttribute(node.key, 'x');
+		node.y = artistgraph.getNodeAttribute(node.key, 'y');
+		node.z = Math.random()*0.1;
+	}
+	latticeMesh.patch(latticeMesh.diff());
+}
+
+function initialLayout3D(){
+	for(let node of latticeMesh.graph.nodes){
+		node.x = artistgraph.getNodeAttribute(node.key, 'pos3D')[0];
+		node.y = artistgraph.getNodeAttribute(node.key, 'pos3D')[1];
+		node.z = artistgraph.getNodeAttribute(node.key, 'pos3D')[2];
+	}
+	latticeMesh.patch(latticeMesh.diff());
+}
+
+function setDepthTestFalse(){
 	latticeMesh.getObjectByName('edges').material.uniforms.opacity.value = 0.5;
 	latticeMesh.getObjectByName('edges').material.depthTest = false
 	latticeMesh.getObjectByName('nodes').material.depthTest = false
@@ -558,8 +628,8 @@ function mode2D(){
 	dimensionMode = "2D";
 }
 
-function mode3D(){
-	latticeMesh.getObjectByName('edges').material.uniforms.opacity.value = 0.9;
+function setDepthTestTrue(){
+	latticeMesh.getObjectByName('edges').material.uniforms.opacity.value = 0.66;
 	latticeMesh.getObjectByName('edges').material.depthTest = true
 	latticeMesh.getObjectByName('nodes').material.depthTest = true;
 	latticeMesh.getObjectByName('edges').material.uniforms.flatShading.value=true;
@@ -572,32 +642,46 @@ if(colorMode=="light"){
 }else{
 	modeDark();
 }
-mode2D();
+setDepthTestFalse();
 
+
+
+// scene.add(simulation.debugGPUMesh);
 function animate() {
-	// copy sim positions to lattice
-	for(let i=0; i<simulation.graph.nodes.length; i++){
-		latticeMesh.graph.nodes[i].x = simulation.graph.nodes[i].pos.x;
-		latticeMesh.graph.nodes[i].y = simulation.graph.nodes[i].pos.y;
-		latticeMesh.graph.nodes[i].z = simulation.graph.nodes[i].pos.z;
-	}
+	if(!paused){
+		simulation.step();
+		// copy sim positions to lattice
+		for(let i=0; i<simulation.graph.nodes.length; i++){
+			latticeMesh.graph.nodes[i].x = simulation.graph.nodes[i].pos.x;
+			latticeMesh.graph.nodes[i].y = simulation.graph.nodes[i].pos.y;
+			latticeMesh.graph.nodes[i].z = simulation.graph.nodes[i].pos.z;
+		}
 
-	// patch viz position coords
-	latticeMesh.patch({
-		nodes: new Map(simulation.graph.nodes.map((node, i)=>[i, 
-		{
-			x: node.pos.x,
-			y: node.pos.y,
-			z: node.pos.z
-		}])),
-		edges: new Map()
-	});
+		// patch viz position coords
+		latticeMesh.patch({
+			nodes: new Map(simulation.graph.nodes.map((node, i)=>[i, 
+			{
+				x: node.pos.x,
+				y: node.pos.y,
+				z: node.pos.z
+			}])),
+			edges: new Map()
+		});
+	}
 
 	// render
 	cameraControls.update();
 	labels.update(camera);
 	canvasLabels.update(camera);
+
+	//
+	// simulation.render(renderer);
+
+	
+	// renderer.setRenderTarget(null);
+	// renderer.clear();
 	renderer.render( scene, camera );
+	// renderer.render( simulation.scene, simulation.camera );
 	requestAnimationFrame( animate );
 }
 

@@ -233,8 +233,10 @@ class LatticeMesh extends THREE.Group{
 		// 	nodeSizeMap: this.nodeSizeMap,
 		// 	nodeFlagsMap: this.nodeFlagsMap
 		// });
-		// this.points.material.depthTest=true;
+		// // this.points.material.depthTest=true;
+		// this.points.name = 'nodes';
 		// this.add(this.points)
+
 
 		this.spheres = new Spheres({
 			nodes: Array.from({length: this.graph.nodes.length}).map((_, i)=>i),
@@ -246,6 +248,8 @@ class LatticeMesh extends THREE.Group{
 		
 		this.spheres.material.transparent=true;
 		this.spheres.name = 'nodes';
+		this.add(this.spheres);
+		// this.spheres.material.depthTest = false;
 
 		this.rods = new Rods({
 			links: this.graph.edges,
@@ -258,13 +262,13 @@ class LatticeMesh extends THREE.Group{
 			edgeCurveMap: this.edgeCurveMap
 		});
 		
-		this.rods.material.depthTest = true;
-		this.add(this.spheres);
+		// this.rods.material.depthTest = true;
+		
 		this.add(this.rods);
 		this.rods.name = 'edges';
-		this.rods.material.depthTest = false;
+		// this.rods.material.depthTest = false;
 		
-		this.spheres.material.depthTest = false;
+		
 
 		/* animate positions */
 		const anim = ()=>{
@@ -347,6 +351,7 @@ class LatticeMesh extends THREE.Group{
 			}
 			tex.minFilter = THREE.NearestFilter;
 			tex.magFilter = THREE.NearestFilter;
+			tex.generateMipmaps = false;
 			tex.needsUpdate = true;
 			return tex;
 		}

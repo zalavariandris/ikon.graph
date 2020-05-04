@@ -20,6 +20,8 @@ class Points extends THREE.Points{
 			transparent: true,
 			uniforms:{
 				viewport: {value: window.renderer.getCurrentViewport()},
+				constantScreenSize: {value: true},
+				opacity:{value: 1.0},
 				anyHighlighted: {value: false},
 				nodePositionMap:  {value: nodePositionMap},
 				nodeColorMap: {value: nodeColorMap},
@@ -33,6 +35,7 @@ class Points extends THREE.Points{
 			vertexShader: `
 			uniform vec4 viewport;
 			uniform sampler2D nodePositionMap;
+			uniform bool constantScreenSize;
 			uniform sampler2D nodeColorMap;
 			uniform float nodeColumns;
 			attribute float nodeIndex;
@@ -69,11 +72,13 @@ class Points extends THREE.Points{
 				gl_Position = projected;
 
 				/* Size */
-				gl_PointSize = nodeSize / pixelSizeAt(nodePos).x;
+
+				gl_PointSize = constantScreenSize ? nodeSize : nodeSize * pixelSizeAt(nodePos).x;
 			}`,
 			fragmentShader: `
 			varying vec3 vColor;
 			varying float vIsHovered;
+			uniform float opacity;
 
 			void main(){
 				/* Color */
@@ -85,7 +90,7 @@ class Points extends THREE.Points{
 				float alpha = 1.0-smoothstep(radius-delta, radius, dist);
 				float isStroke = 1.0-smoothstep(radius-delta-delta*0.33, radius-delta*0.33, dist);
 				if(alpha>0.0){
-					gl_FragColor = vec4(mix(vec3(0,0,0), vColor, isStroke), alpha);
+					gl_FragColor = vec4(mix(vec3(0,0,0), vColor, isStroke), alpha*opacity);
 
 				}else{
 					discard;

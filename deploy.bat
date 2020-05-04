@@ -1,4 +1,4 @@
-npnpm run build
+npm run build
 git add -f dist
 git commit -m "dist subtree commit2"
 git push origin --delete gh-pages
