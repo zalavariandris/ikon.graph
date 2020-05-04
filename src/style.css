@@ -41,16 +41,34 @@ body{
 	transition: opacity 0.3s;
 	min-width: 50px;
 }
+
 #actionBox:hover{
 	opacity: 0.7;
 
+}
+
+#actionBox button{
+	background: hsla(0,0%, 90%);
+	appearance: none;
+	border: none;
+	border-radius: 0;
+	padding: 2px;
+	border: 1px solid hsla(0, 0%, 50%, 0.33);
+}
+
+#actionBox button:hover{
+	background: white;
+}
+
+#actionBox button:focus{
+	outline: none;
 }
 
 #actionBox>*{
 	display: block;
 	width: 100%;
 	font-size: inherit;
-	padding: 1em 0.1em;
+	height: 35px;
 }
 
 #graphCanvas{

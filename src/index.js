@@ -137,7 +137,7 @@ function initViz(){
 	window.camera = camera;
 
 	/* grid */
-	scene.add(new THREE.GridHelper(100, 10));
+	// scene.add(new THREE.GridHelper(100, 10));
 
 	/* LIGHTING */
 	let keyLight = new THREE.PointLight('white', 0.7);
@@ -249,7 +249,7 @@ function initViz(){
 			)
 			const dstSqr = pos.distanceToSquared(camera.position);
 			let centrality = artistgraph.getNodeAttribute(n, 'eigencentrality')
-			return Math.min(Math.pow(centrality*10, 1)*9000/dstSqr, 0.9);
+			return Math.min(Math.pow(centrality*10, 1)*12000/dstSqr, 0.9);
 		},
 
 		color: n=>{
@@ -415,7 +415,7 @@ function initViz(){
     		latticeMesh.graph.nodes[i].highlighted = false;
     	}
 		latticeMesh.setAnyHighlighted(false);
-		canvasLabels.domElement.style.opacity = 0.8;
+		canvasLabels.domElement.style.opacity = 1.0;
     	 // higlight importan neighbors 
     	if(event.index){
     		const n = latticeMesh.graph.nodes[event.index].key;
@@ -484,6 +484,7 @@ function initViz(){
 			for(let i=0; i<latticeMesh.graph.nodes.length; i++){
 				latticeMesh.graph.nodes[i].highlighted = false;
 			}
+			canvasLabels.domElement.style.opacity = 1.0;
 
 			/* higlight important nodes */
 			const i = latticeMesh.indexOfNode(event.value);
@@ -497,6 +498,8 @@ function initViz(){
 			/* patch viz */
 			latticeMesh.patch(latticeMesh.diff());
 			latticeMesh.setAnyHighlighted(true);
+	    	canvasLabels.domElement.style.opacity = 0.2;
+
 			labels.patch(labels.diff());
 		}
 	});
@@ -516,11 +519,11 @@ function initViz(){
 	// play button
 	const playButton = document.createElement('button');
 	
-	playButton.innerText = "\u25B6";
+	playButton.innerText = ">";
 	actionBox.append(playButton);
 	playButton.addEventListener('click', ()=>{
 		paused = !paused;
-		playButton.innerText = paused ? "\u25B6" : '||'
+		playButton.innerText = paused ? ">" : '||'
 	});
 
 	// color mode
