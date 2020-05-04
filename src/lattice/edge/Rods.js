@@ -6,7 +6,7 @@ class Rods extends THREE.Mesh{
 		nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap, 
 		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap, edgeCurveMap}){
 		/* base geometry */
-		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1.0, 3, 6, false);
+		const baseGeo = new THREE.CylinderBufferGeometry(0.5,0.5, 1.0, 3, 8, false);
 		// const baseGeo = new THREE.PlaneBufferGeometry(1.0, 1.0);
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2));
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0, -0.5));
@@ -33,7 +33,7 @@ class Rods extends THREE.Mesh{
 			uniforms: {
 				opacity: {value: 1.0},
 				flatShading: {value: false},
-				curviness: {value: 0.33},
+				curviness: {value: 0.2},
 				anyNodeHighlighted: {value: false},
 				nodeConstantScreenSize: {value: true},
 				edgeConstantScreenSize: {value: true},
@@ -146,8 +146,8 @@ class Rods extends THREE.Mesh{
 				mat4 scaleMatrix = mat4(
 					edgeWidth,0,0,0,
 					0,edgeWidth,0,0,
-					0,0, d, 0,
-					0,0,-sourceNodeSize/2.0,1
+					0,0, 1, 0,
+					0,0, 0,1
 				);
 
 				// create lookat matrix

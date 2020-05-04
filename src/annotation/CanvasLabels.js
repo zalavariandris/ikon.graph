@@ -39,10 +39,12 @@ class CanvasLabels{
 				   screenPos.x>-1 && screenPos.x<1 &&
 				   screenPos.y>-1 && screenPos.y<1){
 					const x = (+screenPos.x+1)/2*this.domElement.width;
-					const y = (-screenPos.y+1)/2*this.domElement.height-20;
+
+					const fontSize = this.fontSize(n);
+					const y = (-screenPos.y+1)/2*this.domElement.height-fontSize*0.9;
 					const color = this.color(n) || this.defaultColor;
 					ctx.fillStyle = `rgba(${color.r*255}, ${color.g*255}, ${color.b*255}, ${this.opacity(n)})`
-					ctx.font = `${this.fontSize(n)} sans-serif`;
+					ctx.font = `${fontSize.toFixed()}px sans-serif`;
 					
 					ctx.fillText(n, x, y);
 				}

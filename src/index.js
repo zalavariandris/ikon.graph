@@ -9,7 +9,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 window.THREE = THREE;
 
 // GRAPH DATA
-import milangraph from './artists_w3_v2.json'
+import milangraph from './data/artists_w3_v2.json'
 
 // GRAHPOLOGY
 import {Graph} from 'graphology'
@@ -23,7 +23,7 @@ import CanvasLabels from './annotation/CanvasLabels.js'
 import HTMLLabels from './annotation/HTMLLabels.js'
 
 // Simulation
-import Simulation from './Simulation.js'
+import Simulation from './Simulation/Simulation.js'
 
 // Controls
 import LatticeControls from './LatticeControls.js'
@@ -243,12 +243,12 @@ function initViz(){
 				artistgraph.getNodeAttribute(n, 'b')/255
 			)
 
-			return nodeColor.lerp(backgroundColor, 0.7);
+			return nodeColor.lerp(backgroundColor, 0.8);
 		},
 
 		fontSize: n=>{
 			const s = 10+artistgraph.getNodeAttribute(n, 'eigencentrality')*50*PIXEL_RATIO
-			return s.toFixed()+'px';
+			return s;
 		}
 	});
 	container.appendChild(canvasLabels.domElement);
@@ -323,8 +323,8 @@ function initViz(){
 	cameraControls.autoRotate = false;
 	cameraControls.autoRotateSpeed = -0.3;
 	cameraControls.screenSpacePanning = true;
-	cameraControls.enableDamping = true;
-	cameraControls.dampingFactor = 0.1
+	// cameraControls.enableDamping = true;
+	// cameraControls.dampingFactor = 0.1
 	cameraControls.enableZoom = true;
 	cameraControls.mouseButtons = {
 		LEFT: THREE.MOUSE.PAN,
@@ -352,7 +352,7 @@ function initViz(){
 	    	}
     	}
 
-    	// // patch viz
+    	// patch viz
     	latticeMesh.patch(latticeMesh.diff());
     	labels.patch(labels.diff());
     });
@@ -374,7 +374,7 @@ function initViz(){
 	    	}
     	}
 
-    	// // patch viz
+    	// patch viz
     	latticeMesh.patch(latticeMesh.diff());
     	labels.patch(labels.diff());
     });
@@ -404,6 +404,7 @@ function initViz(){
 
     latticeControls.addEventListener('nodedrag', event=>{
     	const n = latticeMesh.graph.nodes[event.index].key;
+    	console.log(event);
     });
 
     /* handle window RESIZE */
@@ -480,32 +481,29 @@ function initViz(){
 	// play button
 	const playButton = document.createElement('button');
 	
-	playButton.innerText = '>';
+	playButton.innerText = "\u25B6";
 	graphInfo.append(playButton);
 	playButton.addEventListener('click', ()=>{
-		console.log('click')
-		// mode3D();
-		// modeDark();
 		simulation.paused = !simulation.paused;
-		playButton.innerText = simulation.paused ? '>' : '||'
+		playButton.innerText = simulation.paused ? "\u25B6" : '||'
 	});
 
 	// color mode
 	colorModeBtn = document.createElement('button');
-	colorModeBtn.innerText = colorMode;
+	colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;
 	
 	colorModeBtn.addEventListener('click', ()=>{
 		if(colorMode=="dark"){
 			modeLight();
-			colorModeBtn.innerText = colorMode
+			colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;
 		}else{
 			modeDark();
-			colorModeBtn.innerText = colorMode
+			colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;
 		}
 	})
 	graphInfo.appendChild(colorModeBtn);
 
-	// dim mode
+	// depthTest mode
 	depthTestButton = document.createElement('input');
 	depthTestButton.type='checkbox';
 	depthTestButton.addEventListener('click', ()=>{
@@ -530,14 +528,14 @@ init();
 // UI
 var colorModeBtn;
 var depthTestButton;
-var colorMode = "light";
+var colorMode = "dark";
 function modeLight(){
 	renderer.domElement.style.backgroundColor = 'hsl(0, 0%, 90%)';
 
 	// renderer.setClearColor('hsl(0, 0%, 90%)')
 	latticeMesh.lightMode();
 	colorMode = "light";
-	colorModeBtn.innerText = colorMode;
+	colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;;
 	canvasLabels.defaultColor = new THREE.Color(0,0,0);
 }
 
@@ -546,7 +544,7 @@ function modeDark(){
 	// renderer.setClearColor('hsl(0, 0%, 20%)')
 	latticeMesh.darkMode();
 	colorMode = "dark";
-	colorModeBtn.innerText = colorMode;
+	colorModeBtn.innerText = colorMode == "dark" ? "light mode" : "dark mode" ;;
 	canvasLabels.defaultColor = new THREE.Color(1,1,1);
 }
 var dimensionMode;

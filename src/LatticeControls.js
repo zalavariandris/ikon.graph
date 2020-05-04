@@ -49,7 +49,13 @@ class LatticeControls extends THREE.Object3D{
 			this.dispatchEvent({type: 'mousedrag'});
 			// console.log('Controls=>mousedrag');
 			if(currentIdx){
-				this.dispatchEvent({type: 'nodedrag', index: currentIdx});
+				this.dispatchEvent({
+					type: 'nodedrag', 
+					index: currentIdx, 
+					clientX: event.clientX,
+					clientY: event.clientY,
+					movementX: event.movementX, 
+					movementY: event.movementY});
 			}
 		}
 		
