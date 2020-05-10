@@ -29,9 +29,6 @@ class Points extends THREE.Points{
 				nodeFlagsMap: {value: nodeFlagsMap},
 				nodeColumns: {value: nodePositionMap.image.width}
 			},
-			extensions: {
-				derivatives: true
-			},
 			vertexShader: `
 			uniform vec4 viewport;
 			uniform sampler2D nodePositionMap;

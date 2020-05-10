@@ -2,6 +2,7 @@ import * as THREE from 'three'
 
 class Rods extends THREE.Mesh{
 	constructor({
+		viewport,
 		links,
 		nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap, 
 		edgeWidthMap, edgeOpacityMap, edgeColorMap, edgeUseNodeColorMap, edgeCurveMap}){
@@ -19,11 +20,11 @@ class Rods extends THREE.Mesh{
 
 		/* edge indices */
 		const edgeIndices = Array.from({length: links.length}).map( (_, i)=>i);
-		geo.setAttribute('edgeIndex', new THREE.InstancedBufferAttribute(new Float32Array(edgeIndices), 1));
+		geo.setAttribute('edgeIndex', new THREE.InstancedBufferAttribute(new Uint16Array(edgeIndices), 1, false));
 
 		/* source/target node indices */
-		geo.setAttribute('sourceNodeIndex', new THREE.InstancedBufferAttribute(new Float32Array(links.map(l=>l.source)), 1));
-		geo.setAttribute('targetNodeIndex', new THREE.InstancedBufferAttribute(new Float32Array(links.map(l=>l.target)), 1));
+		geo.setAttribute('sourceNodeIndex', new THREE.InstancedBufferAttribute(new Uint16Array(links.map(l=>l.source)), 1, false));
+		geo.setAttribute('targetNodeIndex', new THREE.InstancedBufferAttribute(new Uint16Array(links.map(l=>l.target)), 1, false));
 				
 		/* material */
 		const mat = new THREE.ShaderMaterial({
@@ -37,7 +38,7 @@ class Rods extends THREE.Mesh{
 				anyNodeHighlighted: {value: false},
 				nodeConstantScreenSize: {value: true},
 				edgeConstantScreenSize: {value: true},
-				viewport: {value: window.renderer.getCurrentViewport()},
+				viewport: {value: viewport},
 				gap: {value: 0},
 				nodePositionMap:  {value: nodePositionMap},
 				nodeSizeMap: {value: nodeSizeMap},
@@ -132,12 +133,6 @@ class Rods extends THREE.Mesh{
 
 				/* Position */
 				// create scale matrix
-				sourceNodeSize*=(1.0+gap);
-				targetNodeSize*=(1.0+gap);
-				if(nodeConstantScreenSize){
-					sourceNodeSize*=pixelSizeAt(sourceNodePos).x;
-					targetNodeSize*=pixelSizeAt(targetNodePos).x;
-				}
 				if(edgeConstantScreenSize){
 					edgeWidth*=pixelSizeAt( mix(sourceNodePos, targetNodePos, 0.5) ).x;
 				}

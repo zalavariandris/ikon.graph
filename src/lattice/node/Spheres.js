@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 class Spheres extends THREE.Mesh{
-	constructor({nodes, nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap}){
+	constructor({viewport, nodeIndices, nodePositionMap, nodeColorMap, nodeSizeMap, nodeFlagsMap}){
 		// baseGeo
 		const baseGeo = new THREE.SphereBufferGeometry(0.5, 10, 2, 0, Math.PI*2, Math.PI/2, Math.PI/2);
 		baseGeo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI/2));
@@ -12,7 +12,7 @@ class Spheres extends THREE.Mesh{
 		geo.attributes.normal = baseGeo.attributes.normal;
 		geo.index = baseGeo.index;
 
-		geo.setAttribute('nodeIndex', new THREE.InstancedBufferAttribute(new Float32Array(nodes), 1));
+		geo.setAttribute('nodeIndex', new THREE.InstancedBufferAttribute(new Uint16Array(nodeIndices), 1, false));
 
 		// create material
 		const mat = new THREE.ShaderMaterial({
@@ -20,15 +20,16 @@ class Spheres extends THREE.Mesh{
 			// wireframe: true,
 			// transparent: true,
 			uniforms: {
+				flatShading: {value: false},
 				anyHighlighted: {value: false},
 				constantScreenSize: {value: true},
 				opacity: {value: 1.0},
-				viewport: {value: window.renderer.getCurrentViewport()},
+				viewport: {value: viewport},
 				nodePositionMap:  {value: nodePositionMap},
 				nodeColorMap: {value: nodeColorMap},
 				nodeSizeMap: {value: nodeSizeMap},
 				nodeFlagsMap: {value: nodeFlagsMap},
-				columns: {value: nodePositionMap.image.width},
+				nodeColumns: {value: nodePositionMap.image.width},
 				...THREE.UniformsLib[ "lights" ]
 			},
 			vertexShader: `
@@ -39,15 +40,13 @@ class Spheres extends THREE.Mesh{
 			uniform sampler2D nodeColorMap;
 			uniform sampler2D nodeSizeMap;
 			uniform sampler2D nodeFlagsMap;
-			uniform float columns;
+			uniform float nodeColumns;
 			attribute float nodeIndex;
 			#include <pullvertex> 
 			
 			varying vec4 vPosition;
 			varying vec4 vNormal;
 			varying vec3 vColor;
-			varying float vIsHighlighted;
-			varying float vIsHovered;
 
 			#include <inverse>
 			#include <transpose>
@@ -58,15 +57,14 @@ class Spheres extends THREE.Mesh{
 
 			void main(){
 				/* Pull variables */
-				vec3 nodePos = pullVec3(nodePositionMap, int(nodeIndex), int(columns));
-				vec3 nodeColor = pullVec3(nodeColorMap, int(nodeIndex), int(columns));
-				float nodeSize = pullFloat(nodeSizeMap, int(nodeIndex), int(columns));
-				float nodeFlags = pullFloat(nodeFlagsMap, int(nodeIndex), int(columns));
+				vec3 nodePos = pullVec3(nodePositionMap, int(nodeIndex), int(nodeColumns));
+				vec3 nodeColor = pullVec3(nodeColorMap, int(nodeIndex), int(nodeColumns));
+				float nodeSize = pullFloat(nodeSizeMap, int(nodeIndex), int(nodeColumns));
+				float nodeFlags = pullFloat(nodeFlagsMap, int(nodeIndex), int(nodeColumns));
+
 				bool isHovered = mod(nodeFlags, 2.0) > 0.0;
 				bool isHighlighted = mod(floor(nodeFlags/2.0), 2.0)>0.0;
 				bool isSelected = mod(floor(nodeFlags / 4.0), 2.0) > 0.;
-				vIsHighlighted = float(isHighlighted);
-				vIsHovered = float(isHovered);
 
 				if(isHovered || isHighlighted){
 					vColor = vec3(1, 1, 1);
@@ -102,20 +100,22 @@ class Spheres extends THREE.Mesh{
 
 			fragmentShader: `
 			#include <lighting>
-			uniform vec4 viewport;
+			// uniform vec4 viewport;
+			uniform bool flatShading;
 			varying vec4 vPosition;
 			varying vec4 vNormal;
 			varying vec3 vColor;
-			varying float vIsHighlighted;
-			varying float vIsHovered;
 			varying float vOpacity;
 
 			void main(){
 				// apply lighting
-				vec3 litColor = lighting(vPosition.xyz, vNormal.xyz) * vColor;
+				vec3 color = vColor;
+				if(!flatShading){
+					color *= lighting(vPosition.xyz, vNormal.xyz);
+				}
 				
 				// final color with opacity
-				gl_FragColor = vec4(litColor, vOpacity);
+				gl_FragColor = vec4(color, vOpacity);
 			}`
 		});
 

@@ -2,14 +2,18 @@
   "name": "ikon.graph",
   "version": "1.0.0",
   "dependencies": {
+    "axios": "^0.19.2",
     "fuzzysort": "^1.1.4",
+    "gpucomputationrender-three": "^2.0.0",
     "graphology": "^0.17.1",
     "graphology-generators": "^0.10.1",
     "graphology-operators": "^1.1.0",
     "graphology-utils": "^1.7.0",
     "js-autocomplete": "^1.0.4",
     "lodash": "^4.17.15",
-    "three": "^0.115.0"
+    "on-change": "^2.0.1",
+    "three": "^0.115.0",
+    "vue": "^2.6.11"
   },
   "scripts": {
     "build": "webpack",

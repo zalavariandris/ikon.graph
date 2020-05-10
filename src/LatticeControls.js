@@ -30,13 +30,13 @@ class LatticeControls extends THREE.Object3D{
 
 			//
 			if(closestIdx!=currentIdx){
-				if(currentIdx)
+				if(currentIdx>=0)
 					this.dispatchEvent( {
 						type:'nodeleave',
 						index: currentIdx
 					} );
 
-				if(closestIdx)
+				if(closestIdx>=0)
 					this.dispatchEvent( {
 						type:'nodeenter',
 						index: closestIdx
@@ -48,7 +48,7 @@ class LatticeControls extends THREE.Object3D{
 		let onMouseDrag = event=>{
 			this.dispatchEvent({type: 'mousedrag'});
 			// console.log('Controls=>mousedrag');
-			if(currentIdx){
+			if(currentIdx>=0){
 				this.dispatchEvent({
 					type: 'nodedrag', 
 					index: currentIdx, 
@@ -66,7 +66,7 @@ class LatticeControls extends THREE.Object3D{
 			let closestIdx = intersects.sort(i=>i.distance).map(i=>i.index)[0];
 
 			this.dispatchEvent({
-				type: 'click',
+				type: 'nodeclick',
 				index: closestIdx
 			});
 		}

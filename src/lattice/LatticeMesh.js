@@ -4,7 +4,7 @@ import Points from './node/Points.js'
 import Spheres from './node/Spheres.js'
 import Lines from './edge/Lines.js'
 import Rods from './edge/Rods.js'
-
+import BMLabels from '../annotation/BMLabels.js'
 
 const NodeFlags = {
 	Hovered: 1,
@@ -211,7 +211,7 @@ function unflatten(array, N){
 };
 
 class LatticeMesh extends THREE.Group{
-	constructor({graph,PROFILE=false})
+	constructor({graph, renderer=undefined, PROFILE=false})
 	{
 		super();
 		// this.graph = graph;
@@ -221,6 +221,7 @@ class LatticeMesh extends THREE.Group{
 		this._indexOfEdgeCache = new Map(graph.edges.map((e, i)=>[e.key, i]));
 		//
 		this.PROFILE = PROFILE;
+		this.renderer = renderer;
 
 		// create data texture maps
 		this.createSharedMaps()
@@ -237,21 +238,11 @@ class LatticeMesh extends THREE.Group{
 		// this.points.name = 'nodes';
 		// this.add(this.points)
 
-
-		this.spheres = new Spheres({
-			nodes: Array.from({length: this.graph.nodes.length}).map((_, i)=>i),
-			nodePositionMap: this.nodePositionMap,
-			nodeColorMap: this.nodeColorMap,
-			nodeSizeMap: this.nodeSizeMap,
-			nodeFlagsMap: this.nodeFlagsMap
-		});
-		
-		this.spheres.material.transparent=true;
-		this.spheres.name = 'nodes';
-		this.add(this.spheres);
-		// this.spheres.material.depthTest = false;
-
+		/*Rods*/
+		let viewport = new THREE.Vector4()
+		this.renderer.getCurrentViewport(viewport)
 		this.rods = new Rods({
+			viewport: viewport,
 			links: this.graph.edges,
 			nodePositionMap: this.nodePositionMap,
 			nodeColorMap: this.nodeColorMap,
@@ -261,15 +252,43 @@ class LatticeMesh extends THREE.Group{
 			edgeOpacityMap: this.edgeOpacityMap,
 			edgeCurveMap: this.edgeCurveMap
 		});
-		
-		// this.rods.material.depthTest = true;
-		
+		this.rods.material.uniforms.flatShading.value = true;
+		this.rods.material.uniforms.opacity.value = 0.5;
 		this.add(this.rods);
 		this.rods.name = 'edges';
-		// this.rods.material.depthTest = false;
+		this.rods.material.depthTest = false;
 		
+		/*Spheres*/
+		this.spheres = new Spheres({
+			viewport: viewport,
+			nodeIndices: Array.from({length: this.graph.nodes.length}).map((_, i)=>i),
+			nodePositionMap: this.nodePositionMap,
+			nodeColorMap: this.nodeColorMap,
+			nodeSizeMap: this.nodeSizeMap,
+			nodeFlagsMap: this.nodeFlagsMap
+		});
 		
+		this.spheres.material.transparent=true;
+		this.spheres.name = 'nodes';
+		this.add(this.spheres);
+		this.spheres.material.depthTest = false;
 
+		/*BMLabels*/
+		this.bmLabels = new BMLabels({
+			viewport: viewport,
+			nodeIndices: Array.from({length: this.graph.nodes.length}).map((_, i)=>i),
+			labels: this.graph.nodes.map(node=>node.key),
+			colors: this.graph.nodes.map(node=>new THREE.Color(node.r, node.g, node.b)),
+			fontSizes: this.graph.nodes.map(node=>node.fontSize),
+			nodePositionMap: this.nodePositionMap,
+			nodeSizeMap: this.nodeSizeMap,
+			nodeColorMap: this.nodeColorMap,
+			nodeFlagsMap: this.nodeFlagsMap,
+		});
+		// this.add(this.bmLabels)
+		window.bmLabels = this.bmLabels;
+		this.bmLabels.material.depthTest = false;
+		
 		/* animate positions */
 		const anim = ()=>{
 			for(let i=0; i<this.nodePositionMap.image.data.length; i++){
@@ -279,6 +298,80 @@ class LatticeMesh extends THREE.Group{
 			requestAnimationFrame(anim);
 		}
 		// anim();
+
+		this.rtScene = new THREE.Scene();
+		this.pickMesh = new THREE.Mesh(
+			this.spheres.geometry,
+			new THREE.ShaderMaterial({
+
+				uniforms:{
+
+					viewport: {value: this.renderer.getCurrentViewport()},
+					constantScreenSize: {value: true},
+					nodeSizeMap: {value: this.nodeSizeMap},
+					nodePositionMap:  {value: this.nodePositionMap},
+					nodeColumns: {value: this.nodePositionMap.image.width}
+				},
+				vertexShader: `
+				uniform float devicePixelRatio;
+				uniform vec4 viewport;
+				attribute float nodeIndex;
+				uniform bool constantScreenSize;
+				uniform sampler2D nodePositionMap;
+				uniform sampler2D nodeSizeMap;
+				uniform float nodeColumns;
+
+				#include <pullvertex>
+				#include <lookAt>
+				#include <pixelSizeAt>
+
+				varying float vNodeIndex;
+
+				void main(){
+					vec3 nodePos = pullVec3(nodePositionMap, int(nodeIndex), int(nodeColumns));
+					float nodeSize = pullFloat(nodeSizeMap, int(nodeIndex), int(nodeColumns));
+
+					vNodeIndex = nodeIndex;
+
+					// calc pixel radius
+					vec3 up = projectionMatrix[1].xyz;
+					mat4 lookAtMatrix = lookAt(nodePos, cameraPosition, up);
+					mat4 m = modelViewMatrix * lookAtMatrix;
+
+					float radius = constantScreenSize ? nodeSize * pixelSizeAt(nodePos).x : nodeSize;
+					radius+=10.0*pixelSizeAt(nodePos).x;
+					vec4 vPosition = m * vec4(position*radius, 1.0);
+
+
+					// vNormal = transpose(inverse(m))*vec4(normal, 1);
+
+					vec4 projected = projectionMatrix * vPosition;
+					
+					gl_Position = projected; 
+				}`,
+				fragmentShader: `
+				varying float vNodeIndex;
+				void main(){
+					int i = int(vNodeIndex)+1;
+					int y = i / 255;
+					int x = i-y*255;
+					gl_FragColor = vec4(float(x)/255.0,float(y)/255.0,0,1);
+				}`
+			})
+		);
+		// this.rtScene.add(new THREE.Mesh(
+		// 	new THREE.BoxBufferGeometry(50, 50, 50),
+		// 	new THREE.MeshBasicMaterial({color: 'green'})
+		// 	))
+		this.pickMesh.frustumCulled = false
+		this.rtScene.add(this.pickMesh);
+		this.pickingFbo = new THREE.WebGLRenderTarget(512, 512, {
+			minFilter: THREE.NearestFilter,
+			magFilter: THREE.NearestFilter,
+			format: THREE.RGBAFormat,
+			type: THREE.UnsignedByteType
+		});
+
 	}
 
 	indexOfNode(key){
@@ -298,9 +391,52 @@ class LatticeMesh extends THREE.Group{
 	}
 
 	raycast(raycaster, intersects){
+		this.colorPicking(raycaster, intersects);
+	}
+
+	colorPicking(raycaster, intersects){
 		const constantScreenSize = this.getObjectByName('nodes').material.uniforms.constantScreenSize.value;
 		const nodes = this.graph.nodes;
 		const data = this.nodePositionMap.image.data;
+
+		const screenPos = raycaster.ray.origin.clone().add(raycaster.ray.direction).applyMatrix4( raycaster.camera.matrixWorldInverse ).applyMatrix4( raycaster.camera.projectionMatrix );
+		
+		// this.renderer.setRenderTarget(this.renderTarget);
+		const buffer = new Uint8Array(1*1*4);
+		this.renderer.setRenderTarget(this.pickingFbo);
+		this.renderer.render(this.rtScene, raycaster.camera);
+		this.renderer.readRenderTargetPixels(this.pickingFbo, 
+			(screenPos.x/2+0.5)*this.pickingFbo.width,
+			(screenPos.y/2+0.5)*this.pickingFbo.height,
+			1,1,
+			buffer);
+
+
+		// convert buffer to index
+		const index = (buffer[0]-1)+255*buffer[1];
+
+		if(buffer[0]>0){
+			// console.log(index, this.graph.nodes[index].key);
+		}
+
+
+		if(buffer[0]>0){
+			intersects.push({
+				index: index,
+				distance: undefined,//Math.sqrt(distanceSqr),//distance,
+				point: null, //intersectionPoint,
+				object: this
+			});
+		}
+	}
+
+	raycastPicking(raycaster, intersects){
+		const constantScreenSize = this.getObjectByName('nodes').material.uniforms.constantScreenSize.value;
+		const nodes = this.graph.nodes;
+		const data = this.nodePositionMap.image.data;
+		// this.colorPicking(raycaster, intersects);
+		// return;
+		
 
 		let inverseMatrix = new THREE.Matrix4();
 		inverseMatrix.getInverse( this.matrixWorld );
@@ -570,7 +706,8 @@ class LatticeMesh extends THREE.Group{
 				this.graph.nodes[i].b
 			)
 
-			const hsl = color.getHSL();
+			let hsl = {h: 0, s: 0, l:0};
+			color.getHSL(hsl);
 			if(hsl.s<0.5 && hsl.l<0.3){
 				color = new THREE.Color().setHSL(hsl.h, hsl.s, 1-hsl.l);
 			}
@@ -589,82 +726,12 @@ class LatticeMesh extends THREE.Group{
 				this.graph.nodes[i].b
 			)
 
-			const hsl = color.getHSL();
+			let hsl = {h: 0, s: 0, l:0};
+			color.getHSL(hsl);
+
 			if(hsl.s<0.5 && hsl.l>0.7){
 				color = new THREE.Color().setHSL(hsl.h, hsl.s, 1-hsl.l);
 			}
-			this.graph.nodes[i].r = color.r;
-			this.graph.nodes[i].g = color.g;
-			this.graph.nodes[i].b = color.b;
-		}
-		this.patch(this.diff());
-	}
-
-	darken(){
-		for(let i=0; i<this.graph.nodes.length;i++){
-			let color =  new THREE.Color(
-				this.graph.nodes[i].r,
-				this.graph.nodes[i].g,
-				this.graph.nodes[i].b
-			)
-
-			const hsl = color.getHSL();
-			color = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l*0.95);
-
-			this.graph.nodes[i].r = color.r;
-			this.graph.nodes[i].g = color.g;
-			this.graph.nodes[i].b = color.b;
-		}
-		this.patch(this.diff());
-	}
-
-	lighten(){
-		for(let i=0; i<this.graph.nodes.length;i++){
-			let color =  new THREE.Color(
-				this.graph.nodes[i].r,
-				this.graph.nodes[i].g,
-				this.graph.nodes[i].b
-			)
-
-			const hsl = color.getHSL();
-			color = new THREE.Color().setHSL(hsl.h, hsl.s, hsl.l*1.05);
-
-			this.graph.nodes[i].r = color.r;
-			this.graph.nodes[i].g = color.g;
-			this.graph.nodes[i].b = color.b;
-		}
-		this.patch(this.diff());
-	}
-
-	saturate(){
-		for(let i=0; i<this.graph.nodes.length;i++){
-			let color =  new THREE.Color(
-				this.graph.nodes[i].r,
-				this.graph.nodes[i].g,
-				this.graph.nodes[i].b
-			)
-
-			const hsl = color.getHSL();
-			color = new THREE.Color().setHSL(hsl.h, hsl.s*1.05, hsl.l);
-
-			this.graph.nodes[i].r = color.r;
-			this.graph.nodes[i].g = color.g;
-			this.graph.nodes[i].b = color.b;
-		}
-		this.patch(this.diff());
-	}
-
-	desaturate(){
-		for(let i=0; i<this.graph.nodes.length;i++){
-			let color =  new THREE.Color(
-				this.graph.nodes[i].r,
-				this.graph.nodes[i].g,
-				this.graph.nodes[i].b
-			)
-
-			const hsl = color.getHSL();
-			color = new THREE.Color().setHSL(hsl.h, hsl.s*0.95, hsl.l);
-
 			this.graph.nodes[i].r = color.r;
 			this.graph.nodes[i].g = color.g;
 			this.graph.nodes[i].b = color.b;
