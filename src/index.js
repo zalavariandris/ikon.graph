@@ -222,12 +222,10 @@ function initViz(){
 	graphComponent = new GraphComponent({
 		container: container,
 		graph: graph,
-		onNodeClick: function(index){
-			if(index){
-				let node = this.latticeMesh.graph.nodes[index];
-				const indices = importantNeighbors(artistgraph, node.key, 1)
-				.map(n=>this.latticeMesh.indexOfNode(n));
-				this.setSelection([index, ...indices]);
+		onNodeClick: function(n){
+			if(n){
+				const neighbors = importantNeighbors(artistgraph, n, 1);
+				this.setSelection([n, ...neighbors]);
 			}else{
 				this.setSelection(null);
 			}

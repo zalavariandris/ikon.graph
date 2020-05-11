@@ -12,14 +12,14 @@ import GPUSimulation from './Simulation/GPUSimulation.js';
 
 
 class GraphComponent extends THREE.EventDispatcher{
-	setSelection(indices){
+	setSelection(nodeIds){
+		const indices = nodeIds.map(n=>this.indexOfNode(nodeIds));
 		// clear current selection
 		this.graph.nodes.filter(node=>node.highlighted)
 		.forEach((node)=>node.highlighted=false);
 
 		// set new selection
 		if(indices){
-			
 			for(let i of indices){
 				this.graph.nodes[i].highlighted = true;
 			}
@@ -146,7 +146,8 @@ class GraphComponent extends THREE.EventDispatcher{
 	    });
 
 	    this.latticeControls.addEventListener('nodeclick', event=>{
-	    	onNodeClick.bind(this)(event.index)
+	    	const n = this.graph.nodes[event.index].key;
+	    	onNodeClick.bind(this)(n);
 	    	// if(event.index>=0){
 	    	// 	// select neighbors
 		    // 	const n = this.latticeMesh.graph.nodes[event.index].key
