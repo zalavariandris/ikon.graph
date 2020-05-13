@@ -125,8 +125,6 @@ class GraphComponent extends THREE.EventDispatcher{
 	    	this.latticeMesh.graph.nodes[event.index].hovered = true;
 	    	this.htmlLabels.patch(this.htmlLabels.diff());
 	    	this.latticeMesh.patch(this.latticeMesh.diff());
-	    	// state.highlighted = [n];
-	    	// ACTIONS.higlightNodes([n]);
 	    	this.needsRender = true;
 	    });
 
@@ -138,8 +136,6 @@ class GraphComponent extends THREE.EventDispatcher{
 	    	// unhighlight nodes
 	    	this.latticeMesh.patch(this.latticeMesh.diff());
 	    	this.htmlLabels.patch(this.htmlLabels.diff());
-	    	// state.highlighted = null
-	    	// ACTIONS.higlightNodes(null);
 	    	this.needsRender = true;
 	    });
 
@@ -150,17 +146,6 @@ class GraphComponent extends THREE.EventDispatcher{
 		    }else{
 		    	onNodeClick.bind(this)(null);
 		    }
-	    	// if(event.index>=0){
-	    	// 	// select neighbors
-		    // 	const n = this.latticeMesh.graph.nodes[event.index].key
-		    // 	const neighbors = [n, ...importantNeighbors(artistgraph, n, 1)];
-		    // 	state.selection = neighbors
-		    // 	// ACTIONS.selectNodes(neighbors);
-		    // }else{
-		    // 	// deselact all
-		    // 	state.selection = [];
-		    // 	// ACTIONS.selectNodes(null);
-		    // }
 	    });
 
 	    this.latticeControls.addEventListener('nodedrag', event=>{
@@ -203,9 +188,6 @@ class GraphComponent extends THREE.EventDispatcher{
 		});
 		window.htmlLabels = this.htmlLabels;
 		this.htmlLabels.domElement.id = 'labels';
-		// state.watch('selection', ()=>{
-		// 	htmlLabels.patch(htmlLabels.diff());
-		// });
 		container.appendChild(this.htmlLabels.domElement);
 
 		/* canvas labels */
@@ -265,14 +247,6 @@ class GraphComponent extends THREE.EventDispatcher{
 		this.canvasLabels.domElement.style.opacity = 1.0;
 		this.canvasLabels.domElement.width = this.container.clientWidth*devicePixelRatio;
 		this.canvasLabels.domElement.height = this.container.clientHeight*devicePixelRatio;
-
-		// state.watch('selection', (nodes)=>{
-		// 	if(nodes && nodes.length>0){
-		//     	canvasLabels.domElement.style.opacity = 0.2;
-		//     }else{
-		//     	canvasLabels.domElement.style.opacity = 1.0;
-		//     }
-		// });
 
 		/* camera controls*/
 		this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement)
