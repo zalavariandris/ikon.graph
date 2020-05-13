@@ -27,7 +27,7 @@ body{
 	z-index: 1;
 }
 
-#container{
+.graph-component{
 	position: absolute;
 	left: 0px;
 	top: 0px;
@@ -37,6 +37,8 @@ body{
 	/*pointer-events: none;*/
 	overflow: hidden;
 
+	background-color: hsl(0, 0%, 20%);
+	transition: background-color 1s;
 }
 
 #actionBox{
@@ -87,11 +89,10 @@ body{
 	width: 100%;
 	height: 100%;
 	/*z-index: -1;*/
-	background-color: hsl(0, 0%, 20%);
-	transition: background-color 1s;
+
 }
 
-#graphInfo{
+#infoBox{
 	font-size: 10px;
 	position: absolute;
 	bottom: 0px;
@@ -105,7 +106,7 @@ body{
 	color: grey;
 }
 
-#search{
+#searchBox{
 	position: absolute;
 	left: 50%;
 	transform: translateX(-50%);

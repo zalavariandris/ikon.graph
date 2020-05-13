@@ -9,17 +9,15 @@ import Simulation from './Simulation/Simulation.js'
 import CPUSimulation from './Simulation/CPUSimulation.js';
 import GPUSimulation from './Simulation/GPUSimulation.js';
 
-
-
 class GraphComponent extends THREE.EventDispatcher{
+
 	setSelection(nodeIds){
-		const indices = nodeIds.map(n=>this.indexOfNode(nodeIds));
 		// clear current selection
 		this.graph.nodes.filter(node=>node.highlighted)
 		.forEach((node)=>node.highlighted=false);
-
-		// set new selection
-		if(indices){
+		if(nodeIds){
+			const indices = nodeIds.map(n=>this.latticeMesh.indexOfNode(n));
+			// set new selection
 			for(let i of indices){
 				this.graph.nodes[i].highlighted = true;
 			}
@@ -140,14 +138,18 @@ class GraphComponent extends THREE.EventDispatcher{
 	    	// unhighlight nodes
 	    	this.latticeMesh.patch(this.latticeMesh.diff());
 	    	this.htmlLabels.patch(this.htmlLabels.diff());
-	    	state.highlighted = null
+	    	// state.highlighted = null
 	    	// ACTIONS.higlightNodes(null);
 	    	this.needsRender = true;
 	    });
 
 	    this.latticeControls.addEventListener('nodeclick', event=>{
-	    	const n = this.graph.nodes[event.index].key;
-	    	onNodeClick.bind(this)(n);
+	    	if(event.index>=0){
+		    	const n = this.graph.nodes[event.index].key;
+		    	onNodeClick.bind(this)(n);
+		    }else{
+		    	onNodeClick.bind(this)(null);
+		    }
 	    	// if(event.index>=0){
 	    	// 	// select neighbors
 		    // 	const n = this.latticeMesh.graph.nodes[event.index].key
@@ -264,13 +266,13 @@ class GraphComponent extends THREE.EventDispatcher{
 		this.canvasLabels.domElement.width = this.container.clientWidth*devicePixelRatio;
 		this.canvasLabels.domElement.height = this.container.clientHeight*devicePixelRatio;
 
-		state.watch('selection', (nodes)=>{
-			if(nodes && nodes.length>0){
-		    	canvasLabels.domElement.style.opacity = 0.2;
-		    }else{
-		    	canvasLabels.domElement.style.opacity = 1.0;
-		    }
-		});
+		// state.watch('selection', (nodes)=>{
+		// 	if(nodes && nodes.length>0){
+		//     	canvasLabels.domElement.style.opacity = 0.2;
+		//     }else{
+		//     	canvasLabels.domElement.style.opacity = 1.0;
+		//     }
+		// });
 
 		/* camera controls*/
 		this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement)
@@ -291,20 +293,21 @@ class GraphComponent extends THREE.EventDispatcher{
 		});
 
 		/* on reisize */
-		this.container.addEventListener('resize', ()=>{
-	    	/*camera*/
-			this.camera.aspect = this.renderer.domElement.clientWidth / renderer.domElement.clientHeight;
+		window.addEventListener('resize', ()=>{
+	    	/* webgl */
+			this.renderer.setSize(this.container.clientWidth*devicePixelRatio, this.container.clientHeight*devicePixelRatio, false);
+			
+			this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
 			this.camera.updateProjectionMatrix();
 
-			// renderer.setSize(renderer.domElement.clientWidth, renderer.domElement.clientHeight, true);
-			this.renderer.setSize(renderer.domElement.clientWidth*PIXEL_RATIO, renderer.domElement.clientHeight*PIXEL_RATIO, false);
-			// canvasLabels.domElement.width = renderer.domElement.clientWidth*PIXEL_RATIO;
-			// canvasLabels.domElement.height = renderer.domElement.clientHeight*PIXEL_RATIO
-
-			/* screensize graph */
 			let viewport = new THREE.Vector4();
 			this.renderer.getViewport(viewport);
 			this.latticeMesh.setViewport(viewport);
+			this.needsRender = true;
+
+			/* canvas labels */
+			this.canvasLabels.domElement.width = this.container.clientWidth*devicePixelRatio;
+			this.canvasLabels.domElement.height = this.container.clientHeight*devicePixelRatio;
 		});
 
 		/* simulation */
