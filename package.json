@@ -8,7 +8,7 @@
     "graphology-operators": "^1.1.0",
     "graphology-utils": "^1.7.0",
     "js-autocomplete": "^1.0.4",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "three": "^0.115.0"
   },
   "scripts": {
