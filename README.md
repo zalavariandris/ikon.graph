@@ -4,6 +4,9 @@ Visualizing hungarian artists network (2021)
 
 ![screenshot](./docs/screenshot-light.png)
 
+working demo: https://zalavariandris.github.io/ikon.graph
+
+related projects:
 - a simple website to browse the data: https://github.com/zalavariandris/ikon.view
 - datasource: (ikon.hu)[https://ikon.hu/]
 
