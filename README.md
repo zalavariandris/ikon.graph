@@ -1,8 +1,27 @@
 # IKON.graph
 
-visualizing hungarian artists network
+Visualizing hungarian artists network (2021)
 
-## Deploy to gh-pages
+![screenshot](./docs/screenshot.png)
+
+## navigation:
+- click and drag to pan
+- ctrl clikc and drag to orbit
+- middle mouse to zoom
+- click on a sphere to highlight importan neighbors
+
+## features
+- curved links (with a custom glsl shader)
+- multitouch navigation
+- search for artists
+- 2D/3D
+- dark mode
+- a custom physics based layout simulation
+
+## todo
+- [x] experimental GPU based simulation
+
+### Deploy to gh-pages
 https://medium.com/@Roli_Dori/deploy-vue-cli-3-project-to-github-pages-ebeda0705fbd
 - add remote from github
 ```
