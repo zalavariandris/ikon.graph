@@ -2,7 +2,7 @@
 
 Visualizing hungarian artists network (2021)
 
-![screenshot](./docs/screenshot.png)
+![screenshot](./docs/screenshot-light.png)
 
 ## navigation:
 - *click and drag* to **pan**
