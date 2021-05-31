@@ -19,8 +19,8 @@ Visualizing hungarian artists network (2021)
 - a custom physics based layout simulation
 - experimental GPU based simulation
 
-### deploy to gh-pages
-https://medium.com/@Roli_Dori/deploy-vue-cli-3-project-to-github-pages-ebeda0705fbd
+### how to deploy a subtree to gh-pages
+> https://medium.com/@Roli_Dori/deploy-vue-cli-3-project-to-github-pages-ebeda0705fbd
 - add remote from github
 ```
 npm run build
