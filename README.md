@@ -4,13 +4,13 @@ Visualizing hungarian artists network (2021)
 
 ![screenshot](./docs/screenshot-light.png)
 
-## navigation:
+## Navigation
 - *click and drag* to **pan**
 - *ctrl* to **orbit**
 - *scroll* or *middle mouse* to **zoom**
 - click on a sphere to **highlight importan neighbors**
 
-## features
+## Features
 - curved links (with a custom glsl shader)
 - multitouch navigation
 - search for artists
@@ -19,7 +19,7 @@ Visualizing hungarian artists network (2021)
 - a custom physics based layout simulation
 - experimental GPU based simulation
 
-### Deploy to gh-pages
+### deploy to gh-pages
 https://medium.com/@Roli_Dori/deploy-vue-cli-3-project-to-github-pages-ebeda0705fbd
 - add remote from github
 ```
